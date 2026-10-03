@@ -1,0 +1,18 @@
+{
+  "appId": "com.balax.yumurta",
+  "appName": "Yumurta Fabrikası: Idle Tycoon",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https",
+    "iosScheme": "https"
+  },
+  "plugins": {
+    "AdMob": {
+      "appId": "ca-app-pub-2626843024156194~7340708978"
+    },
+    "ScreenOrientation": {
+      "orientation": "portrait"
+    }
+  }
+}

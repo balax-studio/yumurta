@@ -1,0 +1,2778 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Yumurta Fabrikası: Idle Tycoon</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="portrait.css">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DotGothic16&display=swap"
+        rel="stylesheet">
+    <script>document.addEventListener('dragstart', function(e){ e.preventDefault(); });</script>
+</head>
+
+<body>
+    <div id="loading-screen"
+        style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 99999; display: block; pointer-events: none;"></div>
+    <div id="game-container">
+        <div id="game-banner"></div>
+        <!-- TOP BAR -->
+        <header id="topbar">
+            <div id="timer-container">
+                <span id="speedrun-timer">00:00:00</span>
+            </div>
+            <div id="desktop-banner"></div>
+            <div id="topbar-row">
+                <div id="stats-header" class="pixel-counter">
+                    <div class="pixel-counter-wrap">
+                        <img src="pixelart_design/chicken_count.png" class="pixel-counter-bg" alt="">
+                        <span id="chickens" class="pixel-counter-val">0</span>
+                    </div>
+                </div>
+                <div id="money-counter" class="pixel-counter">
+                    <div class="pixel-counter-wrap">
+                        <img src="pixelart_design/money_count.png" class="pixel-counter-bg" alt="">
+                        <span id="money" class="pixel-counter-val">0</span>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 5px; align-items: center; height: 54px;">
+                    <button id="ranking-btn" class="pixel-btn" style="display: none !important;"></button>
+                    <button id="pause-btn" class="pixel-btn"></button>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <div id="farm-area" style="position: relative;">
+                <div id="game-viewport">
+                    <div class="cine-bar cine-bar-top"></div>
+                    <div class="cine-bar cine-bar-bottom"></div>
+                    <div id="cine-fade"></div>
+                    <div id="cine-frame">
+                        <div class="sky-extension"></div>
+                        <canvas id="gameCanvas" width="800" height="650" style="image-rendering: pixelated;"></canvas>
+                        <div class="earth-extension"></div>
+                        <!-- egg-bubble: width/height controlan el tamaño de la caja; ancla = centro-X + borde inferior (punta de flecha = posición del huevo) -->
+                        <div id="egg-bubble"
+                            style="display:none; position:absolute; pointer-events:none; z-index:20; font-family:'Press Start 2P',cursive; color:#222; background:#fff; border:3px solid #333; border-radius:4px; box-shadow:3px 3px 0 #333; overflow:visible; box-sizing:border-box; width:140px; height:66px;">
+                            <div class="bubble-inner" style="width:100%;height:100%;overflow:hidden;padding:6px 8px;box-sizing:border-box;display:flex;align-items:center;">
+                                <div style="width:100%;text-align:center;line-height:1.4;" data-i18n="dragEggToMarket">Drag me to the market to sell me!</div>
+                            </div>
+                            <div style="position:absolute;bottom:-14px;left:50%;margin-left:-9px;width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-top:14px solid #333;"></div>
+                            <div style="position:absolute;bottom:-10px;left:50%;margin-left:-7px;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:10px solid #fff;"></div>
+                        </div>
+                        <!-- water-bubble: fuente FIJA (tamaño en portrait.css/style.css, por
+                             modo — ver "#water-bubble .bubble-inner" en cada uno) — la caja se
+                             ajusta al contenido (auto + max-width) en vez de encoger la fuente
+                             para caber en una caja fija (por eso ya no usa _fitBubble).
+                             x/y en _updateTutorialBubbles -->
+                        <div id="water-bubble"
+                            style="display:none; position:absolute; pointer-events:none; z-index:20; font-family:'Press Start 2P',cursive; color:#222; background:#fff; border:3px solid #333; border-radius:4px; box-shadow:3px 3px 0 #333; overflow:visible; box-sizing:border-box; width:auto; height:auto; min-width:110px; max-width:220px;">
+                            <div class="bubble-inner" style="width:100%;overflow:hidden;padding:6px 8px;box-sizing:border-box;display:flex;align-items:center;">
+                                <div style="width:100%;text-align:center;line-height:1.4;"><span id="water-bubble-text"></span></div>
+                            </div>
+                            <div style="position:absolute;bottom:-11px;left:16px;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:11px solid #333;"></div>
+                            <div style="position:absolute;bottom:-8px;left:17px;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid #fff;"></div>
+                        </div>
+                        <!-- food-bubble: misma fuente FIJA que water-bubble (por modo) — ver comentario arriba. -->
+                        <div id="food-bubble"
+                            style="display:none; position:absolute; pointer-events:none; z-index:20; font-family:'Press Start 2P',cursive; color:#222; background:#fff; border:3px solid #333; border-radius:4px; box-shadow:3px 3px 0 #333; overflow:visible; box-sizing:border-box; width:auto; height:auto; min-width:110px; max-width:220px;">
+                            <div class="bubble-inner" style="width:100%;overflow:hidden;padding:6px 8px;box-sizing:border-box;display:flex;align-items:center;">
+                                <div style="width:100%;text-align:center;line-height:1.4;"><span id="food-bubble-text"></span></div>
+                            </div>
+                            <div style="position:absolute;bottom:-11px;right:16px;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:11px solid #333;"></div>
+                            <div style="position:absolute;bottom:-8px;right:17px;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid #fff;"></div>
+                        </div>
+                        <!-- speedrun-counter: solo visible en reto Speedrun. Fondo 9-slice
+                             (contador.png, mismo sistema que .btn-sprite). x/y/ancho/escala
+                             en window.LAYOUT.SPEEDRUN_COUNTER_* (layout.js/portrait.js) —
+                             posicionado en _updateTutorialBubbles(). -->
+                        <div id="speedrun-counter" class="speedrun-counter" style="display:none; position:fixed; pointer-events:none; z-index:20;">
+                            <span id="speedrun-counter-text">00:00</span>
+                        </div>
+                        <!-- flower-bubble: width/height controlan el tamaño de la caja; x/y en _updateTutorialBubbles -->
+                        <div id="flower-bubble"
+                            style="display:none; position:absolute; pointer-events:none; z-index:20; font-family:'Press Start 2P'; color:#222; background:#fff; border:3px solid #333; border-radius:4px; box-shadow:3px 3px 0 #333; overflow:visible; box-sizing:border-box; width:200px; height:100px;">
+                            <div class="bubble-inner" style="width:100%;height:100%;overflow:hidden;padding:8px 8px;box-sizing:border-box;display:flex;align-items:center;">
+                                <div style="width:100%;text-align:center;line-height:1.6;"><span data-i18n="flowerLine1">Hi! I'm just a flower,</span> <span data-i18n="flowerLine2">but press</span> <span style="color:#e67e22" data-i18n="buyChicken">Buy Chicken</span> <span data-i18n="flowerLine3">in the shop to start!</span></div>
+                            </div>
+                            <div style="position:absolute;bottom:-11px;right:20px;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:11px solid #333;"></div>
+                            <div style="position:absolute;bottom:-8px;right:21px;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid #fff;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <aside id="shop">
+                <div id="shop-header"
+                    style="flex-shrink: 0; display: flex; justify-content: center; align-items: center; position: relative; border-bottom: 2px dashed #8d6e63; padding-bottom: 10px;">
+                    <span class="shop-arrow shop-arrow-left"></span>
+                    <h2 style="margin-bottom: 0; border-bottom: none; padding-bottom: 0;" data-i18n="shopTitle">Shop
+                    </h2>
+                    <span class="shop-arrow shop-arrow-right"></span>
+                    <button id="mute-btn" class="pixel-btn"
+                        style="position: absolute; left: 0; padding: 2px; font-size: 7px; border-radius: 50%; width: 24px; height: 24px; display: flex; justify-content: center; align-items: center; border-width: 2px;">MUTE</button>
+                    <button id="toggle-info-btn" class="pixel-btn"
+                        style="position: absolute; right: 0; padding: 2px; font-size: 14px; border-radius: 50%; width: 24px; height: 24px; display: flex; justify-content: center; align-items: center; border-width: 2px;">i</button>
+                </div>
+                <div id="shop-scroll">
+
+                    <!-- ── GRANJA ── -->
+                    <div id="grp-farm" class="shop-group-header" style="display:none;" data-i18n="shopGrpFarm">GRANJA</div>
+                    <button id="buy-chicken" class="shop-btn" data-i18n-title="buyChickenDesc"
+                        data-title="A new laying friend. (+1 Chicken)">
+                        <span data-i18n="buyChicken">Buy Chicken</span>
+                        <span id="cost-chicken">0$</span>
+                    </button>
+                    <button id="buy-rooster" class="shop-btn" data-i18n-title="theRoosterDesc"
+                        data-title="A majestic companion. Helps grow your flock over time. (Spawns 1 chick periodically)">
+                        <span data-i18n="theRooster">The Rooster</span>
+                        <span id="cost-rooster">200$</span>
+                    </button>
+                    <button id="buy-growth" class="shop-btn" style="display:none;" data-i18n-title="growthFormulaDesc"
+                        data-title="Speeds up the time it takes a chick to mature into a laying hen. (-10s Maturation Time)">
+                        <span data-i18n="growthFormula">Growth Formula</span>
+                        <span id="cost-growth">1000$</span>
+                    </button>
+                    <button id="buy-petting" class="shop-btn" style="display:none;" data-i18n-title="happyPettingDesc"
+                        data-title="Happy Petting: Pet your chickens to speed up their egg laying.">
+                        <span data-i18n="happyPetting">Happy Petting</span>
+                        <span id="cost-petting">2$</span>
+                    </button>
+                    <button id="buy-diet" class="shop-btn" data-i18n-title="proDietDesc"
+                        data-title="Specialized nutrition that speeds up egg laying. (-1.0s Lay Time)">
+                        <span data-i18n="proDiet">Pro Diet</span>
+                        <span id="cost-diet">1500$</span>
+                    </button>
+                    <button id="buy-batch" class="shop-btn" data-i18n-title="dessertStomachDesc"
+                        data-title="Eats x2 food and lays twice as many eggs between meals.">
+                        <span data-i18n="dessertStomach">Dessert Stomach</span>
+                        <span id="cost-batch">30000$</span>
+                    </button>
+                    <button id="buy-megachicken" class="shop-btn" style="display:none;"
+                        data-i18n-title="chickenBlueDesc"
+                        data-title="Merge 10 normal chickens into 1 Blue Chicken. Blue eggs are worth x10! (Endless only)">
+                        <span data-i18n="chickenBlue">Chicken Blue</span>
+                        <span id="cost-megachicken">10 Chickens</span>
+                    </button>
+                    <button id="buy-gallinapro" class="shop-btn" style="display:none;"
+                        data-i18n-title="chickenRoseDesc"
+                        data-title="Merge 5 Blue Chickens into 1 Rose Chicken. Rose eggs are worth x50! (Endless only)">
+                        <span data-i18n="chickenRose">Chicken Rose</span>
+                        <span id="cost-gallinapro">5 Blues</span>
+                    </button>
+                    <button id="buy-chickengold" class="shop-btn" style="display:none;"
+                        data-i18n-title="chickenGoldDesc"
+                        data-title="Merge 10 Rose Chickens into 1 Gold Chicken. Gold eggs are worth x500! (Endless only)">
+                        <span data-i18n="chickenGold">Chicken Gold</span>
+                        <span id="cost-chickengold">10 Roses</span>
+                    </button>
+                    <button id="buy-chickengreen" class="shop-btn" style="display:none;"
+                        data-i18n-title="chickenGreenDesc"
+                        data-title="Merge 5 Gold Chickens into 1 Green Chicken. Green eggs are worth x2500! (Endless only)">
+                        <span data-i18n="chickenGreen">Chicken Green</span>
+                        <span id="cost-chickengreen">5 Golds</span>
+                    </button>
+                    <button id="buy-chickenpurple" class="shop-btn" style="display:none;"
+                        data-i18n-title="chickenPurpleDesc"
+                        data-title="Merge 10 Green Chickens into 1 Purple Chicken. Purple eggs are worth x25000! (Endless only)">
+                        <span data-i18n="chickenPurple">Chicken Purple</span>
+                        <span id="cost-chickenpurple">10 Greens</span>
+                    </button>
+                    <button id="buy-music" class="shop-btn" data-i18n-title="farmMusicDesc"
+                        data-title="Plays upbeat tunes, making chickens move faster. (+15% Speed)">
+                        <span data-i18n="farmMusic">Farm Music</span>
+                        <span id="cost-music">500$</span>
+                    </button>
+
+                    <!-- ── RECURSOS ── -->
+                    <div id="grp-resources" class="shop-group-header" style="display:none;" data-i18n="shopGrpResources">RECURSOS</div>
+                    <button id="buy-maxfood" class="shop-btn" style="display:none;" data-i18n-title="maxFoodDesc"
+                        data-title="Expands trough capacity.">
+                        <span data-i18n="maxFood">Max Food</span>
+                        <span id="cost-maxfood">500$</span>
+                    </button>
+                    <button id="buy-maxwater" class="shop-btn" style="display:none;" data-i18n-title="maxWaterDesc"
+                        data-title="Expands water basin capacity.">
+                        <span data-i18n="maxWater">Max Water</span>
+                        <span id="cost-maxwater">500$</span>
+                    </button>
+                    <button id="buy-refill" class="shop-btn" data-i18n-title="refillDesc"
+                        data-title="Boosts manual interaction power.">
+                        <span data-i18n="refill">Refill</span>
+                        <span id="cost-refill">1000$</span>
+                    </button>
+                    <button id="buy-autofood" class="shop-btn" data-i18n-title="autoFoodDesc"
+                        data-title="Automates food refilling.">
+                        <span data-i18n="autoFood">Auto-Food</span>
+                        <span id="cost-autofood">1000$</span>
+                    </button>
+                    <button id="buy-autowater" class="shop-btn" data-i18n-title="autoWaterDesc"
+                        data-title="Automates water refilling.">
+                        <span data-i18n="autoWater">Auto-Water</span>
+                        <span id="cost-autowater">1000$</span>
+                    </button>
+                    <button id="buy-autofood-amt" class="shop-btn" style="display:none;">
+                        <span data-i18n="autoFoodAmt">Food Amount</span>
+                        <span id="cost-autofood-amt">250$</span>
+                    </button>
+                    <button id="buy-autowater-amt" class="shop-btn" style="display:none;">
+                        <span data-i18n="autoWaterAmt">Water Amount</span>
+                        <span id="cost-autowater-amt">250$</span>
+                    </button>
+
+                    <!-- ── HUEVOS ── -->
+                    <div id="grp-eggs" class="shop-group-header" style="display:none;" data-i18n="shopGrpEggs">HUEVOS</div>
+                    <button id="buy-basevalue" class="shop-btn" data-i18n-title="eggValueDesc"
+                        data-title="Enhances the innate quality of all eggs. (x1.5 Base Value)">
+                        <span data-i18n="eggValue">Egg Value</span>
+                        <span id="cost-basevalue">20$</span>
+                    </button>
+                    <button id="buy-premium" class="shop-btn" data-i18n-title="premiumFeedDesc"
+                        data-title="A chance to lay high-quality premium eggs. (+1% Chance / x2 Value, max 100%)">
+                        <span data-i18n="premiumFeed">Premium Feed (+1%)</span>
+                        <span id="cost-premium">50$</span>
+                    </button>
+                    <button id="buy-golden" class="shop-btn" data-i18n-title="goldenEggDesc"
+                        data-title="A rare chance to lay legendary golden eggs. (+1% Chance / x5 Value)">
+                        <span data-i18n="goldenEgg">Golden Egg (+1%)</span>
+                        <span id="cost-golden">1000$</span>
+                    </button>
+                    <button id="buy-magnet" class="shop-btn" data-i18n-title="magnetForceDesc"
+                        data-title="Magnetizes your cursor to grab more eggs at a distance. (+5px Radius / +1 Capacity)">
+                        <span data-i18n="magnetForce">Magnet Force</span>
+                        <span id="cost-magnet">5$</span>
+                    </button>
+
+                    <!-- ── MAQUINARIA ── -->
+                    <div id="grp-machinery" class="shop-group-header" style="display:none;" data-i18n="shopGrpMachinery">MAQUINARIA</div>
+                    <button id="buy-autocollect" class="shop-btn" style="display:none;" data-i18n-title="farmBeltDesc"
+                        data-title="Automatically transports meadow eggs below.">
+                        <span data-i18n="farmBelt">Farm Belt</span>
+                        <span id="cost-autocollect">25$</span>
+                    </button>
+                    <button id="buy-autosell" class="shop-btn" style="display:none;" data-i18n-title="storageBeltDesc"
+                        data-title="Automatically transports stored eggs to market.">
+                        <span data-i18n="storageBelt">Storage Belt</span>
+                        <span id="cost-autosell">100$</span>
+                    </button>
+                    <button id="buy-washer" class="shop-btn" style="display:none;" data-i18n-title="eggWasherDesc"
+                        data-title="Cleans eggs to dramatically increase their market value. (x2 Value Multiplier)">
+                        <span data-i18n="eggWasher">Egg Washer</span>
+                        <span id="cost-washer">1000$</span>
+                    </button>
+                    <button id="buy-stamper" class="shop-btn" data-i18n-title="qualityStampDesc"
+                        data-title="Certifies egg quality for a higher market price. (x2 Value Multiplier)">
+                        <span data-i18n="qualityStamp">Quality Stamp</span>
+                        <span id="cost-stamper">15000$</span>
+                    </button>
+                    <button id="buy-packager" class="shop-btn" data-i18n-title="eggPackagerDesc"
+                        data-title="Boxes eggs in dozens for massive profits. (x2 Value Multiplier)">
+                        <span data-i18n="eggPackager">Egg Packager</span>
+                        <span id="cost-packager">100000$</span>
+                    </button>
+                    <button id="buy-ribbon" class="shop-btn" data-i18n-title="premiumBoxDesc"
+                        data-title="Wraps your eggs in luxurious matte black and gold foil packaging. (x2 Value Multiplier)">
+                        <span data-i18n="premiumBox">Premium Box</span>
+                        <span id="cost-ribbon">600000$</span>
+                    </button>
+                    <button id="buy-sorter" class="shop-btn" style="display:none;" data-i18n-title="eggSorterDesc"
+                        data-title="Sorts eggs by type: golden to the left basket, premium to the right basket.">
+                        <span data-i18n="eggSorter">Egg Sorter</span>
+                        <span id="cost-sorter">250$</span>
+                    </button>
+                    <button id="buy-sortbonus" class="shop-btn" style="display:none;" data-i18n-title="sortBonusDesc"
+                        data-title="Sort Bonus: +25% value per level when selling a carton filled with ONLY premium or ONLY golden eggs.">
+                        <span data-i18n="sortBonus">Sort Bonus</span>
+                        <span id="cost-sortbonus">500$</span>
+                    </button>
+                    <button id="buy-box" class="shop-btn" style="display:none;" data-i18n-title="cardboardBoxDesc"
+                        data-title="A cardboard box you can drag anywhere. Fill it with eggs and drag it to the right edge to sell them all.">
+                        <span data-i18n="cardboardBox">Cardboard Box</span>
+                        <span id="cost-box">4$</span>
+                    </button>
+
+                    <button id="buy-tvAd" class="shop-btn" style="display:none;" data-i18n-title="asSeenOnTVDesc"
+                        data-title="As Seen On TV: A commercial about your farm goes viral. Permanently doubles the sale value of all eggs! (x2 Value Multiplier)">
+                        <span data-i18n="asSeenOnTV">As Seen On TV</span>
+                        <span id="cost-tvAd">1.000.000$</span>
+                    </button>
+
+                    <!-- ── ESPECIAL ── -->
+                    <div id="grp-special" class="shop-group-header" style="display:none;" data-i18n="shopGrpSpecial">ESPECIAL</div>
+                    <button id="buy-retire" class="shop-btn">
+                        <span class="btn-title" data-i18n="retire">Retire</span>
+                        <span class="btn-price" id="cost-retire">1.000.000.000$</span>
+                    </button>
+
+                </div><!-- end shop-scroll -->
+
+                <!-- Aviso de mejora comprable fuera de la vista (solo portrait, ver
+                     _updateShopScrollHint en script.js y portrait.css). -->
+                <div id="shop-scroll-hint" aria-hidden="true"><span class="shop-scroll-hint-arrow"></span></div>
+
+                <!-- ENDLESS MODE SCORE + LEADERBOARD -->
+                <div id="endless-panel"
+                    style="display:none; flex-direction:column; gap:6px; margin-top:8px; flex-shrink:0;"></div>
+
+                <!-- RANDOM OFFER -->
+                <div id="random-offer-popup">
+                    <button id="offer-accept-btn" class="shop-btn">
+                        <div id="offer-top">
+                            <span id="offer-title-el"></span>
+                            <div id="offer-right"><span id="offer-ads-label" data-i18n="adsBadge">ADS</span><span
+                                    id="offer-countdown">60s</span><span id="offer-close-btn">X</span></div>
+                        </div>
+                        <div id="offer-desc-el"></div>
+                    </button>
+                </div>
+
+
+            </aside>
+        </main>
+    </div>
+    <div id="game-tooltip"></div>
+    <!-- RETIRE CINEMATIC OVERLAY — full-screen cinematic world, separate from game canvas -->
+    <div id="retire-cine-root" style="display:none; position:fixed; inset:0; z-index:10000; background:#000; overflow:hidden;">
+        <!-- Recortador: mismo tamaño y posición que el canvas, overflow:hidden. Al hacer
+             zoom del fondo (Egg Jam), el bg escalado se queda DENTRO del cuadrado del canvas
+             en vez de desbordar hacia los lados en pantallas anchas. -->
+        <div id="retire-cine-bg-clip"
+             style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:min(100vw,100vh); height:min(100vw,100vh); overflow:hidden; pointer-events:none;">
+            <img id="retire-cine-bg" src="pixelart_design/cinematica.png"
+                 style="display:none; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:100%; height:100%; image-rendering:pixelated; pointer-events:none;">
+        </div>
+        <canvas id="retireCineCanvas" width="400" height="400" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:min(100vw,100vh); height:min(100vw,100vh); display:block; image-rendering:pixelated;"></canvas>
+    </div>
+    <!-- RETIRE STATS OVERLAY -->
+    <div id="retire-stats-overlay"
+        style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.55); z-index:100002; justify-content:center; align-items:center;">
+        <!-- Tamaños con clamp(min, fluido, max): grandes en escritorio, se encogen solos en
+             móvil para que el cartel quepa SIN scroll. overflow-y queda solo de red de
+             seguridad. Colores unificados: etiquetas en oro, valores en blanco. -->
+        <div style="background:#5c3a21; border:6px solid #d4af37; border-radius:10px; padding:clamp(6px,1.8vh,30px) clamp(16px,3vw,36px); width:min(900px,94vw); max-height:96vh; box-sizing:border-box; display:flex; flex-direction:column; gap:clamp(5px,1.1vh,18px); align-items:center; overflow-y:auto;">
+
+            <!-- Título: va DENTRO de la banda marrón claro del sprite (los 80px de
+                 border-image-width superior). El margen lo centra en ella. -->
+            <!-- border:none anula la regla GLOBAL `h2 { border-bottom: 2px dashed #8d6e63 }`
+                 de style.css:356 — era la rayita "--------" bajo el título.
+                 'Press Start 2P' es monoespaciada y ancha: "CONGRATULATIONS!" son 16 chars
+                 (vs 7 de "THE END"), así que el letter-spacing también va con clamp o se
+                 sale del panel en móvil. -->
+            <h2 style="color:white; font-family:'Press Start 2P',monospace; font-size:clamp(11px,3.4vw,27px); text-shadow:2px 2px 0 #333; margin:clamp(6px,1.6vh,14px) 0 0; letter-spacing:clamp(0px,0.4vw,4px); border:none; white-space:nowrap;" data-i18n="congratulations">CONGRATULATIONS!</h2>
+
+            <!-- Los créditos van al FINAL del cartel (tras los botones): el orden natural de
+                 un final es felicitación → resultados → qué hacer ahora → créditos.
+                 Este margen es lo MÍNIMO para que el cuerpo no choque con el borde inferior
+                 de la banda marrón (80px desde arriba). Más que esto = aire muerto. -->
+            <div style="margin-top:clamp(2px,0.8vh,12px);"></div>
+
+            <!-- Two columns -->
+            <div style="display:flex; flex-direction:row; gap:clamp(12px,3vw,32px); width:100%; align-items:stretch; flex-wrap:wrap;">
+
+                <!-- LEFT: Stats -->
+                <div id="rs-panel-stats" style="flex:3; min-width:min(300px,100%); font-family:'Press Start 2P',monospace;">
+                    <!-- Sin fila "Dead": ya no muere ninguna gallina. state.deadChickens sigue
+                         existiendo y sumando en el cálculo de PERFECT, solo no se muestra. -->
+                    <table style="width:100%; border-collapse:collapse; font-size:clamp(8px,2.4vw,14px);">
+                        <tr><td style="color:#ffd651; text-align:right; padding:clamp(3px,0.7vh,9px) 14px clamp(3px,0.7vh,9px) 0; white-space:nowrap;" data-i18n="challengeLabel">Challenge:</td><td id="rs-val-challenge" style="color:#fff; padding:clamp(3px,0.7vh,9px) 0;"></td></tr>
+                        <tr><td style="color:#ffd651; text-align:right; padding:clamp(3px,0.7vh,9px) 14px clamp(3px,0.7vh,9px) 0; white-space:nowrap;" data-i18n="playtime">Playtime:</td>  <td id="rs-val-playtime"  style="color:#fff; padding:clamp(3px,0.7vh,9px) 0;"></td></tr>
+                        <!-- Solo Speedrun: tu mejor posición en el ranking global. Oculta por
+                             defecto — _updateRetireStats() en script.js la muestra/rellena. El
+                             botón abre el panel de ranking ESTÁNDAR del juego (#ranking-overlay,
+                             el mismo que el del menú principal), no uno propio de este cartel. -->
+                        <tr id="rs-row-rank" style="display:none;">
+                            <td style="color:#ffd651; text-align:right; padding:clamp(3px,0.7vh,9px) 14px clamp(3px,0.7vh,9px) 0; white-space:nowrap;" data-i18n="rankingColRank">Posición:</td>
+                            <td style="color:#f1c40f; padding:clamp(3px,0.7vh,9px) 0; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                                <span id="rs-val-rank"></span>
+                                <button id="rs-view-ranking-btn" class="pixel-btn btn-sprite btn-blue" style="font-family:'Press Start 2P',monospace; font-size:clamp(6px,1.4vw,8px); padding:clamp(3px,0.6vh,6px) 8px; display:inline-flex; align-items:center; gap:6px;">
+                                    <span class="mm-bar-icon mm-icon-ranking" style="width:14px; height:14px; background-size:84px 14px; background-position:-14px 0;"></span>
+                                    <span data-i18n="viewRanking">VER RANKING</span>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr><td style="color:#ffd651; text-align:right; padding:clamp(3px,0.7vh,9px) 14px clamp(3px,0.7vh,9px) 0; white-space:nowrap;" data-i18n="eggsSold">Eggs Sold:</td> <td id="rs-val-eggs"      style="color:#fff; padding:clamp(3px,0.7vh,9px) 0;"></td></tr>
+                        <tr><td style="color:#ffd651; text-align:right; padding:clamp(3px,0.7vh,9px) 14px clamp(3px,0.7vh,9px) 0; white-space:nowrap;" data-i18n="earnings">Earnings:</td>  <td id="rs-val-earnings"  style="color:#fff; padding:clamp(3px,0.7vh,9px) 0;"></td></tr>
+                        <tr><td style="color:#ffd651; text-align:right; padding:clamp(3px,0.7vh,9px) 14px clamp(3px,0.7vh,9px) 0; white-space:nowrap;" data-i18n="chickens">Chickens:</td>  <td id="rs-val-chickens"  style="color:#fff; padding:clamp(3px,0.7vh,9px) 0;"></td></tr>
+                        <tr><td style="color:#ffd651; text-align:right; padding:clamp(3px,0.7vh,9px) 14px clamp(3px,0.7vh,9px) 0; white-space:nowrap;" data-i18n="hungryLabel">Hungry:</td> <td id="rs-val-hungry"    style="color:#fff; padding:clamp(3px,0.7vh,9px) 0;"></td></tr>
+                    </table>
+                </div>
+
+                <!-- RIGHT: Action -->
+                <div style="flex:2; min-width:min(220px,100%); display:flex; flex-direction:column; justify-content:center; align-items:center; gap:clamp(6px,1.2vh,14px);">
+                    <!-- El data-i18n va en los SPAN, no en el <button>: applyTranslations()
+                         hace innerHTML = t(key) sobre el elemento marcado, así que ponerlo
+                         en el botón borraría la segunda línea. -->
+                    <button id="rs-reto-btn" class="pixel-btn btn-sprite btn-green" style="width:100%; font-size:clamp(8px,2.2vw,14px); padding:clamp(5px,1vh,14px) 10px; line-height:1.5;">
+                        <span data-i18n="playAReto">¡JUEGA<br>UN RETO!</span><br>
+                        <span data-i18n="retoModes" style="font-size:0.7em; opacity:0.85; letter-spacing:0;">SPEEDRUN o ENDLESS</span>
+                    </button>
+                    <button id="rs-restart-btn" class="pixel-btn btn-sprite btn-red" style="width:100%; font-size:clamp(7px,1.9vw,11px); padding:clamp(4px,0.9vh,12px) 10px; line-height:1.5;" data-i18n="restartThisMode">REINICIAR<br>ESTE MODO</button>
+                </div>
+
+            </div>
+
+
+
+            <div style="display:flex; flex-direction:column; align-items:center; gap:clamp(4px,0.8vh,8px); margin-top:clamp(4px,1vh,10px); font-family:'Press Start 2P',monospace; line-height:1.5;">
+                <span style="color:#f1c40f; font-size:clamp(9px,1.6vw,12px); text-shadow:2px 2px 0 #000;">YUMURTA FABRİKASI</span>
+                <span style="color:#d4af37; font-size:clamp(7px,1.2vw,9px); text-shadow:1px 1px 0 #000;">ÇİFTLİK TYCOON</span>
+            </div>
+        </div>
+    </div>
+    <div id="endless-delete-overlay"
+        style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); z-index:200000; justify-content:center; align-items:center; flex-direction:column;">
+        <div
+            style="background:#1a0a2e; border:6px solid #8e44ad; border-radius:8px; padding:20px; text-align:center; max-width:380px; box-shadow:0 10px 20px rgba(0,0,0,0.6);">
+            <h2 style="color:#e74c3c; font-size:14px; margin-bottom:12px; text-shadow:2px 2px 0 #000; border:none;"
+                data-i18n="warning">WARNING!</h2>
+            <p style="color:#f1c40f; font-size:9px; line-height:1.6; margin-bottom:18px; text-shadow:1px 1px 0 #000;"
+                data-i18n="confirmDeleteEndless">Delete your Endless Farm save? This cannot be undone!</p>
+            <div style="display:flex; justify-content:center; gap:16px;">
+                <button id="endless-delete-cancel" class="pixel-btn" style="background:#95a5a6; color:white;"
+                    data-i18n="cancel">CANCEL</button>
+                <button id="endless-delete-confirm" class="pixel-btn" style="background:#c0392b; color:white;"
+                    data-i18n="deleteEndlessSave">DELETE</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="wipe-confirm-overlay"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 100010; justify-content: center; align-items: center; flex-direction: column;">
+        <div
+            style="padding: 0px; text-align: center; width: min(520px, 92vw); box-sizing: border-box;">
+            <h2 style="color: #ffffff; font-size: 20px; margin-bottom: 18px; text-shadow: 2px 2px 0 #000; border: none;"
+                data-i18n="warning">WARNING!</h2>
+            <p
+                style="color: #f1c40f; font-size: 13px; line-height: 1.7; margin-bottom: 16px; text-shadow: 1px 1px 0 #000;">
+                <!-- El texto lo fija _openWipeConfirm() en script.js: genérico para el borrado
+                     TOTAL, o nombrando el modo cuando se borra un reto concreto. -->
+                <span id="wipe-desc" data-i18n="warningDesc">Are you sure you want to delete ALL progress?<br><br>This cannot be
+                    undone!</span>
+            </p>
+            <p id="endless-save-notice"
+                style="display:none; color:#9b59b6; font-size:11px; line-height:1.6; margin-bottom:18px; background:rgba(142,68,173,0.15); border:2px solid #8e44ad; border-radius:4px; padding:10px;"
+                data-i18n="endlessSaveNotice">Your Endless Farm progress is saved separately and will NOT be lost. You
+                can return anytime!</p>
+            <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 14px;">
+                <button id="wipe-cancel" class="pixel-btn btn-sprite btn-blue" style="font-size: 13px; padding: 14px 18px; white-space: nowrap;"
+                    data-i18n="cancel">CANCEL</button>
+                <button id="wipe-confirm" class="pixel-btn btn-sprite btn-red" style="font-size: 13px; padding: 14px 18px; white-space: nowrap;"
+                    data-i18n="wipeIt">WIPE IT</button>
+            </div>
+        </div>
+    </div>
+    <div id="mode-switch-overlay"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 100000; justify-content: center; align-items: center; flex-direction: column;">
+        <div
+            style="background: #5c3a21; border: 6px solid #2b170e; border-radius: 8px; padding: 24px; text-align: center; max-width: 400px; box-shadow: 0px 10px 20px rgba(0,0,0,0.5);">
+            <h2 style="color: #9b59b6; font-size: 13px; margin-bottom: 14px; text-shadow: 2px 2px 0 #000; border: none;"
+                data-i18n="modeSwitchTitle">SWITCHING MODE</h2>
+            <p id="mode-switch-mode-name"
+                style="color: #f1c40f; font-size: 11px; margin-bottom: 14px; text-shadow: 1px 1px 0 #000;"></p>
+            <p style="color: #2ecc71; font-size: 9px; line-height: 1.7; margin-bottom: 20px; background: rgba(46,204,113,0.12); border: 2px solid #27ae60; border-radius: 4px; padding: 10px;"
+                data-i18n="modeSwitchNotice">Your Endless Farm save is kept. You can continue it anytime!</p>
+            <div style="display: flex; justify-content: center; gap: 20px;">
+                <button id="mode-switch-cancel" class="pixel-btn" style="background: #95a5a6; color: white;"
+                    data-i18n="cancel">CANCEL</button>
+                <button id="mode-switch-confirm" class="pixel-btn" style="background: #9b59b6; color: white;"
+                    data-i18n="modeSwitchBtn">SWITCH</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN MENU -->
+    <div id="scene-transition" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:#000;z-index:100001;pointer-events:none;opacity:0;"></div>
+
+    <div id="main-menu-overlay"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 99998; justify-content: center; align-items: center; flex-direction: column; overflow: hidden; background: #000;">
+
+        <!-- Intro cinematic: bg_intro pan + clouds -->
+        <div id="intro-pan-wrapper" style="position:absolute;inset:0;z-index:0;overflow:hidden;opacity:0;">
+            <!-- Scale root: 1920×2229 reference canvas, CSS-scaled to fill any viewport -->
+            <div id="intro-scale-root" style="position:absolute;width:1920px;height:2229px;top:0;left:50%;margin-left:-960px;transform-origin:top center;">
+            <div id="intro-pan-container" style="position:absolute;width:1920px;height:2229px;left:0;top:0;">
+                <img id="intro-bg-img" src="pixelart_design/bg_intro.png" style="width:100%;height:100%;image-rendering:pixelated;display:block;">
+                <!-- Clouds: positioned in 1920×2229 reference space -->
+                <img id="cloud-1" src="pixelart_design/Nubes/Capa 1.png" style="position:absolute;width:360px;height:auto;top:115px;image-rendering:pixelated;">
+                <img id="cloud-2" src="pixelart_design/Nubes/Capa 2.png" style="position:absolute;width:346px;height:auto;top:300px;image-rendering:pixelated;">
+                <img id="cloud-3" src="pixelart_design/Nubes/Capa 3.png" style="position:absolute;width:205px;height:auto;top:88px; image-rendering:pixelated;">
+                <img id="cloud-4" src="pixelart_design/Nubes/Capa 4.png" style="position:absolute;width:205px;height:auto;top:371px;image-rendering:pixelated;">
+                <img id="cloud-5" src="pixelart_design/Nubes/Capa 5.png" style="position:absolute;width:276px;height:auto;top:212px;image-rendering:pixelated;">
+                <img id="cloud-6" src="pixelart_design/Nubes/Capa 2.png" style="position:absolute;width:318px;height:auto;top:476px;image-rendering:pixelated;">
+                <img id="cloud-7" src="pixelart_design/Nubes/Capa 1.png" style="position:absolute;width:282px;height:auto;top:600px;image-rendering:pixelated;">
+                <img id="cloud-8" src="pixelart_design/Nubes/Capa 5.png" style="position:absolute;width:229px;height:auto;top:529px;image-rendering:pixelated;">
+                <img id="cloud-9" src="pixelart_design/Nubes/Capa 3.png" style="position:absolute;width:247px;height:auto;top:688px;image-rendering:pixelated;">
+                <!-- Menu chickens injected by shared/intro.js -->
+                <div id="mm-animals"></div>
+
+                <!-- JUGAR button: ground-level prop, z-sorted with animals via JS. Visible from the start. -->
+                <button id="mm-jugar-btn" style="position:absolute;left:50%;transform:translateX(-50%);bottom:var(--play-btn-bottom,28%);pointer-events:none;background:none;border:none;cursor: var(--cur-finger);padding:0;z-index:720;">
+                    <div style="position:relative;display:inline-block;line-height:0;filter:drop-shadow(rgba(0,0,0,0.6) 0px 6px 16px);">
+                        <img class="mm-jugar-crate" src="pixelart_design/themachinegg_boton_patas.png" style="width:190px;height:auto;image-rendering:pixelated;display:block;transition:transform 0.12s ease;">
+                        <span data-i18n="playBtn" style="position:absolute;top:46%;left:0;width:100%;text-align:center;transform:translateY(-50%);font-family:'Press Start 2P',monospace;font-size:14px;color:#fff;text-shadow:2px 2px 0 #000,3px 3px 0 #000,-1px -1px 0 #000;pointer-events:none;white-space:nowrap;">PLAY</span>
+                    </div>
+                </button>
+
+                <!-- Mode select: flex row of 5 prado crates. Positioned in hidden zone by JS, revealed by camera pan. -->
+                <button id="mm-prado-volver" style="display:none;pointer-events:none;" data-i18n="goBack">← BACK</button>
+
+                <div id="mm-prado-crates-row" style="display:none;">
+
+                    <div id="mm-prado-normal" class="mm-prado-mode-btn" data-target="normal-mode-btn" data-challenge="vanilla"
+                         tabindex="0" role="button">
+                        <div class="prado-crate-inner">
+                            <img class="prado-crate-frame" src="pixelart_design/themachinegg_modo_marco.png">
+                            <div class="prado-mode-icon"></div>
+                            <span class="prado-mode-name" data-prado-name="chal1Title">NORMAL</span>
+                            <span class="prado-completed-badge" data-challenge-badge="vanilla" style="display:none"></span>
+                            <div class="prado-desc" data-i18n="chal1Desc">No ranking, no penalties. Grow at your own pace and reach the retirement destination safely.</div>
+                            <div class="prado-actions">
+                                <button class="prado-play-btn pixel-btn btn-sprite btn-green"><span data-i18n="playBtn">PLAY</span></button>
+                                <button class="prado-restart-btn pixel-btn btn-sprite btn-red" data-challenge="vanilla"><span class="card-icon card-icon-borrar"></span></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="mm-prado-adam" class="mm-prado-mode-btn" data-target="adam-mode-btn" data-challenge="adam"
+                         tabindex="0" role="button">
+                        <div class="prado-crate-inner">
+                            <img class="prado-crate-frame" src="pixelart_design/themachinegg_modo_marco.png">
+                            <div class="prado-mode-icon"></div>
+                            <span class="prado-mode-name" data-prado-name="chal3Title">ADAM &amp; EVE</span>
+                            <span class="prado-completed-badge" data-challenge-badge="adam" style="display:none"></span>
+                            <div class="prado-desc" data-i18n="chal3Desc">Start with strictly 1 Rooster and 1 Hen. Repopulate the farm with love, Max 5 roosters.</div>
+                            <div class="prado-actions">
+                                <button class="prado-play-btn pixel-btn btn-sprite btn-green"><span data-i18n="playBtn">PLAY</span></button>
+                                <button class="prado-restart-btn pixel-btn btn-sprite btn-red" data-challenge="adam"><span class="card-icon card-icon-borrar"></span></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="mm-prado-fourth" class="mm-prado-mode-btn" data-target="fourth-mode-btn" data-challenge="manual"
+                         tabindex="0" role="button">
+                        <div class="prado-crate-inner">
+                            <img class="prado-crate-frame" src="pixelart_design/themachinegg_modo_marco.png">
+                            <div class="prado-mode-icon"></div>
+                            <span class="prado-mode-name" data-prado-name="chal4Title">EGG JAM</span>
+                            <span class="prado-completed-badge" data-challenge-badge="manual" style="display:none"></span>
+                            <div class="prado-desc" data-i18n="chal4Desc">The Farm belt broke! But your magnet is much more powerful. Drag eggs manually to the basement.</div>
+                            <div class="prado-actions">
+                                <button class="prado-play-btn pixel-btn btn-sprite btn-green"><span data-i18n="playBtn">PLAY</span></button>
+                                <button class="prado-restart-btn pixel-btn btn-sprite btn-red" data-challenge="manual"><span class="card-icon card-icon-borrar"></span></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="mm-prado-endless" class="mm-prado-mode-btn" data-target="endless-mode-btn" data-challenge="endless"
+                         tabindex="0" role="button">
+                        <div class="prado-crate-inner">
+                            <img class="prado-crate-frame" src="pixelart_design/themachinegg_modo_marco.png">
+                            <div class="prado-mode-icon"></div>
+                            <span class="prado-mode-name" data-prado-name="chal5Title">ENDLESS FARM</span>
+                            <span class="prado-completed-badge" data-challenge-badge="endless" style="display:none"></span>
+                            <span id="prado-rank-endless" class="prado-rank-badge" style="display:none; color:#ffe234;"></span>
+                            <div class="prado-desc" data-i18n="chal5Desc">No retirement. Eggs take longer. Upgrades grow slower. How big can your farm get? Global ranking!</div>
+                            <div class="prado-actions">
+                                <button class="prado-play-btn pixel-btn btn-sprite btn-green"><span data-i18n="playBtn">PLAY</span></button>
+                                <button class="prado-restart-btn pixel-btn btn-sprite btn-red" data-challenge="endless"><span class="card-icon card-icon-borrar"></span></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="mm-prado-speedrun" class="mm-prado-mode-btn" data-target="speedrun-start-btn" data-challenge="speedrun"
+                         tabindex="0" role="button">
+                        <div class="prado-crate-inner">
+                            <img class="prado-crate-frame" src="pixelart_design/themachinegg_modo_marco.png">
+                            <div class="prado-mode-icon"></div>
+                            <span class="prado-mode-name" data-prado-name="chal2Title">SPEEDRUN</span>
+                            <span class="prado-completed-badge" data-challenge-badge="speedrun" style="display:none"></span>
+                            <span id="prado-rank-speedrun" class="prado-rank-badge" style="display:none; color:#f1c40f;"></span>
+                            <div class="prado-desc" data-i18n="chal2Desc">Egg values are doubled (x2). Reach the end as fast as you can. Your final time goes to the Global Ranking!</div>
+                            <div class="prado-actions">
+                                <button class="prado-play-btn pixel-btn btn-sprite btn-green"><span data-i18n="playBtn">PLAY</span></button>
+                                <button class="prado-restart-btn pixel-btn btn-sprite btn-red" data-challenge="speedrun"><span class="card-icon card-icon-borrar"></span></button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div><!-- #mm-prado-crates-row -->
+
+            </div>
+            </div><!-- #intro-scale-root -->
+        </div>
+
+        <button id="mm-skip-btn" style="display:none;position:absolute;bottom:16px;right:16px;z-index:2;width:70px;height:30px;line-height:30px;text-align:center;padding:0;background-image:url('pixelart_design/themachinegg_boton.png');background-size:100% 100%;image-rendering:pixelated;border:none;-webkit-appearance:none;appearance:none;outline:none;color:#fff;font-family:'Press Start 2P',monospace;font-size:8px;text-shadow:2px 2px 0 #000,3px 3px 0 #000,-1px -1px 0 #000;cursor: var(--cur-finger);" data-i18n="skip">SKIP</button>
+
+
+
+        <!-- Home: logo hanging from top, JUGAR below -->
+        <div id="mm-home" style="position:relative;z-index:1;width:100%;height:100%;box-sizing:border-box;pointer-events:none;">
+
+            <!-- Hang rig: ropes + logo, always visible from start -->
+            <div id="mm-hang-rig" style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:clamp(275px,68vw,800px);pointer-events:none;">
+                <div id="mm-rope-l" style="position:absolute;top:0;left:20px;width:5px;height:60px;background:repeating-linear-gradient(#7B4F22 0 3px,#C48B3A 3px 6px);transform-origin:top left;"></div>
+                <div id="mm-rope-r" style="position:absolute;top:0;right:20px;width:5px;height:60px;background:repeating-linear-gradient(#7B4F22 0 3px,#C48B3A 3px 6px);transform-origin:top right;"></div>
+                <div id="mm-logo" style="display:block;position:relative;width:100%;margin-top:55px;filter:drop-shadow(0 6px 16px rgba(0,0,0,0.6));">
+                    <img src="pixelart_design/themachinegg_mainmenu_logo_base.png" style="display:block;width:100%;height:auto;image-rendering:pixelated;">
+                    <div style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;text-align:center;box-sizing:border-box;user-select:none;padding:2px 10px;">
+                        <span style="font-family:'Press Start 2P',cursive,monospace;font-size:clamp(10px,2.2vw,22px);font-weight:900;color:#ffffff;text-shadow:3px 3px 0 #000,-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000,0 3px 0 #000,3px 0 0 #000,-3px 0 0 #000,0 -3px 0 #000;letter-spacing:1px;white-space:nowrap;line-height:1.2;">YUMURTA FABRİKASI</span>
+                        <span style="font-family:'Press Start 2P',cursive,monospace;font-size:clamp(7px,1.4vw,14px);font-weight:900;color:#ffae19;text-shadow:2px 2px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,0 2px 0 #000,2px 0 0 #000,-2px 0 0 #000,0 -2px 0 #000;letter-spacing:1.5px;margin-top:clamp(2px,0.4vw,5px);white-space:nowrap;">ÇİFTLİK TYCOON</span>
+                    </div>
+                </div>
+                <div id="mm-logo-shadow" style="position:absolute;bottom:1px;left:50%;width:97%;height:8px;background:rgba(0,0,0,0.55);filter:blur(1px);transform:translateX(-50%) scaleX(0);opacity:0;pointer-events:none;"></div>
+            </div>
+
+            <!-- Bottom bar hidden -->
+            <div id="mm-bottom-bar" style="position:absolute;bottom:0;left:0;right:0;display:none;justify-content:center;gap:8px;padding:12px 16px;">
+                <button id="mm-ajustes-btn" class="mm-bar-btn">
+                    <span class="mm-bar-icon mm-icon-ajustes"></span>
+                    <span class="mm-bar-label" data-i18n="settings">AJUSTES</span>
+                </button>
+                <button id="main-ranking-btn" class="mm-bar-btn">
+                    <span class="mm-bar-icon mm-icon-ranking"></span>
+                    <span class="mm-bar-label" data-i18n="ranking">RANKING</span>
+                </button>
+                <button id="main-logros-btn" class="mm-bar-btn">
+                    <span class="mm-bar-icon mm-icon-logros"></span>
+                    <span class="mm-bar-label" data-i18n="achievements">LOGROS</span>
+                </button>
+                <button id="mm-salir-btn" class="mm-bar-btn">
+                    <span class="mm-bar-icon mm-icon-salir"></span>
+                    <span class="mm-bar-label" data-i18n="exitGame">SALIR</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Hidden mode trigger buttons (click targets for prado crates) -->
+        <div id="mode-btn-targets" style="display:none;">
+            <button id="normal-mode-btn"></button>
+            <button id="adam-mode-btn"></button>
+            <button id="fourth-mode-btn"></button>
+            <button id="endless-mode-btn"></button>
+            <button id="speedrun-start-btn"></button>
+        </div>
+    </div>
+
+    <!-- PAUSE OVERLAY -->
+    <div id="pause-overlay" style="display: none;">
+        <div id="pause-panel">
+
+            <div id="pause-panel-title">
+                <span data-i18n="pause">PAUSE</span>
+            </div>
+
+            <div id="pause-panel-content">
+
+            <!-- PANEL: MAIN -->
+            <div id="pause-main" style="display: flex;">
+                <button id="resume-btn" class="pixel-btn btn-sprite btn-5">
+                    <span data-i18n="resume">CONTINUAR</span></button>
+                <button id="pause-to-settings" class="pixel-btn btn-sprite btn-5"><span data-i18n="settings">SETTINGS</span></button>
+                <button id="pause-to-logros" class="pixel-btn btn-sprite btn-5"><span data-i18n="achievements">ACHIEVEMENTS</span></button>
+                <button id="pause-salir-btn" class="pixel-btn btn-sprite btn-5"><span data-i18n="exitGame">EXIT</span></button>
+            </div>
+
+            <!-- PANEL: AJUSTES -->
+            <div id="pause-settings" style="display: none;">
+                <div class="pause-section-label" data-i18n="language">LANGUAGE</div>
+                <div id="language-grid">
+                    <button id="lang-en" class="pixel-btn lang-btn" style="background:#2980b9;"
+                        onclick="window.changeLanguage('en', true)">EN</button>
+                    <button id="lang-es" class="pixel-btn lang-btn" style="background:#c0392b;"
+                        onclick="window.changeLanguage('es', true)">ES</button>
+                    <button id="lang-pt-br" class="pixel-btn lang-btn" style="background:#e67e22;"
+                        onclick="window.changeLanguage('pt-br', true)">PT</button>
+                    <button id="lang-it" class="pixel-btn lang-btn" style="background:#27ae60;"
+                        onclick="window.changeLanguage('it', true)">IT</button>
+                    <button id="lang-fr" class="pixel-btn lang-btn" style="background:#34495e;"
+                        onclick="window.changeLanguage('fr', true)">FR</button>
+                    <button id="lang-de" class="pixel-btn lang-btn" style="background:#f1c40f; color:black;"
+                        onclick="window.changeLanguage('de', true)">DE</button>
+                    <button id="lang-ru" class="pixel-btn lang-btn" style="background:#8e44ad;"
+                        onclick="window.changeLanguage('ru', true)">RU</button>
+                    <button id="lang-tr" class="pixel-btn lang-btn" style="background:#d35400;"
+                        onclick="window.changeLanguage('tr', true)">TR</button>
+                    <button id="lang-ja" class="pixel-btn lang-btn" style="background:#e056fd;"
+                        onclick="window.changeLanguage('ja', true)">JA</button>
+                    <button id="lang-zh-cn" class="pixel-btn lang-btn" style="background:#e74c3c;"
+                        onclick="window.changeLanguage('zh-cn', true)">ZH</button>
+                    <button id="lang-ko" class="pixel-btn lang-btn" style="background:#3498db;"
+                        onclick="window.changeLanguage('ko', true)">KO</button>
+                    <button id="lang-pl" class="pixel-btn lang-btn" style="background:#e1b12c;"
+                        onclick="window.changeLanguage('pl', true)">PL</button>
+                    <button id="lang-sv" class="pixel-btn lang-btn" style="background:#0097e6;"
+                        onclick="window.changeLanguage('sv', true)">SV</button>
+                    <button id="lang-nl" class="pixel-btn lang-btn" style="background:#e84118;"
+                        onclick="window.changeLanguage('nl', true)">NL</button>
+                    <button id="lang-vi" class="pixel-btn lang-btn" style="background:#4cd137;"
+                        onclick="window.changeLanguage('vi', true)">VI</button>
+                    <button id="lang-id" class="pixel-btn lang-btn" style="background:#e84118;"
+                        onclick="window.changeLanguage('id', true)">ID</button>
+                </div>
+
+                <button id="pause-mute-proxy" class="pixel-btn btn-sprite btn-5"><span data-i18n="soundToggle">SOUND ON/OFF</span></button>
+                <button id="remove-ads-btn" class="pixel-btn" style="display:none; background:#9b59b6;"><span data-i18n="removeAds">REMOVE ADS</span></button>
+                <button id="pause-privacy-btn" class="pixel-btn btn-sprite btn-5" onclick="window.open('privacy.html', '_blank')"><span data-i18n="privacyPolicy">PRIVACY POLICY</span></button>
+                <button id="pause-settings-back" class="pixel-btn btn-sprite btn-5"><span data-i18n="back">BACK</span></button>
+            </div>
+
+            <!-- PANEL: LOGROS -->
+            <div id="pause-logros" style="display: none;">
+                <div id="achievements-panel">
+                    <div class="ach-header">
+                        ACHIEVEMENTS <span id="ach-count"></span></div>
+                    <div id="ach-list"></div>
+                </div>
+                <button id="pause-logros-back" class="pixel-btn btn-sprite btn-5"><span data-i18n="back">BACK</span></button>
+            </div>
+
+            </div><!-- #pause-panel-content -->
+        </div><!-- #pause-panel -->
+    </div>
+
+    <!-- GLOBAL RANKING OVERLAY (speedrun leaderboard) -->
+    <!-- z-index 100005: por ENCIMA de retire-stats-overlay (100002) — el botón VER
+         RANKING del cartel final abre este panel MIENTRAS ese cartel sigue abierto
+         detrás, y con el mismo z-index de antes (100000) quedaba tapado del todo,
+         igual que le pasaba a name-input-overlay (ver arriba). -->
+    <div id="ranking-overlay"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 100005; justify-content: center; align-items: center;">
+        <div id="ranking-panel"
+            style="position: relative; max-width: 600px; width: 96%; height: 80vh; box-sizing: border-box; display: flex; flex-direction: column;">
+
+            <div id="ranking-panel-title" style="position: absolute; top: 0; left: 0; right: 0; text-align: center; pointer-events: none;">
+                <span style="color: #f1c40f; font-size: 20px; font-family: 'Press Start 2P', monospace; text-shadow: 2px 2px black;" data-i18n="ranking">RANKING</span>
+            </div>
+
+            <div style="padding: 40px 20px; display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; box-sizing: border-box;">
+                <div id="ranking-version-tabs" style="display:flex; gap:8px; justify-content:center; flex-shrink:0; flex-wrap:wrap; margin-top:10px;">
+                    <button id="ranking-tab-v2"
+                        style="font-family:'Press Start 2P',monospace; font-size:8px; padding:9px 16px; cursor: var(--cur-finger); background:#f1c40f; color:#000; border:2px solid #333; border-radius:3px;" data-i18n="tabSpeedrun">SPEEDRUN</button>
+                    <button id="ranking-tab-endless"
+                        style="font-family:'Press Start 2P',monospace; font-size:8px; padding:9px 16px; cursor: var(--cur-finger); background:#555; color:#ccc; border:2px solid #333; border-radius:3px;" data-i18n="tabEndless">ENDLESS</button>
+                    <button id="ranking-tab-legacy"
+                        style="font-family:'Press Start 2P',monospace; font-size:8px; padding:9px 16px; cursor: var(--cur-finger); background:#555; color:#ccc; border:2px solid #333; border-radius:3px;" data-i18n="rankingTabOld">OLD VERSION</button>
+                </div>
+                <p id="ranking-status"
+                    style="font-size:clamp(10px,1.6vh,14px); margin:0; flex-shrink:0; text-align:center;"
+                    data-i18n="connecting">Connecting to server...</p>
+                <div id="ranking-name-edit-row" style="display:none; flex-shrink:0; align-items:center; justify-content:center; gap:6px; margin:2px 0 4px;">
+                    <span style="color:#fff; font-family:'Press Start 2P',monospace; font-size:clamp(5px,0.8vh,7px);"><span data-i18n="rankingColName">NOMBRE</span>:</span>
+                    <input id="ranking-name-edit-input" type="text" maxlength="20"
+                        style="background:#222; border:2px solid #f1c40f; color:#fff; font-family:'Press Start 2P',monospace; font-size:clamp(5px,0.8vh,7px); padding:3px 6px; width:120px; outline:none;"
+                        data-i18n-placeholder="yourNamePlaceholder" placeholder="TU NOMBRE">
+                    <button id="ranking-name-edit-save"
+                        style="background:#27ae60; border:2px solid #fff; color:#fff; font-family:'Press Start 2P',monospace; font-size:clamp(5px,0.8vh,7px); padding:3px 7px; cursor: var(--cur-finger);">✓</button>
+                </div>
+                <div id="ranking-player-row" style="display:none; flex-shrink:0; background:#0d2b0d; border:2px solid #2ecc71; border-radius:3px; padding:0 10px;">
+                    <table style="width:100%; border-collapse:collapse; table-layout:fixed; font-family:'Press Start 2P',monospace; font-size:clamp(8px,1.3vh,11px);">
+                        <colgroup>
+                            <col style="width:36px">
+                            <col style="width:40px">
+                            <col>
+                            <col style="width:52px">
+                            <col class="ranking-col-value" style="width:88px">
+                            <col class="ranking-col-time" style="width:72px;display:none">
+                        </colgroup>
+                        <tbody id="ranking-player-tbody"></tbody>
+                    </table>
+                </div>
+                <!-- Wrapper: header + scrollable list share the same border box, no gap between them -->
+                <div style="display:flex; flex-direction:column; flex:1; min-height:0; border:3px solid rgb(230 144 78); box-sizing:border-box;">
+                    <!-- Column headers: outside the scroll, scrollbar starts below here -->
+                    <div id="ranking-col-header" style="flex-shrink:0; background:#1a0f0a; padding:0 18px 0 10px; box-sizing:border-box; border-bottom:2px solid #4a3020;">
+                        <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+                            <colgroup>
+                                <col style="width:36px">
+                                <col style="width:40px">
+                                <col>
+                                <col style="width:52px">
+                                <col class="ranking-col-value" style="width:88px">
+                                <col class="ranking-col-time" style="width:72px;display:none">
+                            </colgroup>
+                            <tbody>
+                                <tr>
+                                    <th style="font-family:'Press Start 2P',monospace;font-size:6px;color:#888;font-weight:normal;padding:4px 2px;text-align:center;">#</th>
+                                    <th style="font-family:'Press Start 2P',monospace;font-size:6px;color:#888;font-weight:normal;padding:4px 2px;text-align:center;">COM.</th>
+                                    <th id="ranking-th-name" style="font-family:'Press Start 2P',monospace;font-size:6px;color:#888;font-weight:normal;padding:4px 2px;text-align:left;">NAME</th>
+                                    <th id="ranking-th-chicken" style="font-family:'Press Start 2P',monospace;font-size:6px;color:#888;font-weight:normal;padding:4px 2px;text-align:right;">CHKN</th>
+                                    <th id="ranking-th-value" style="font-family:'Press Start 2P',monospace;font-size:6px;color:#888;font-weight:normal;padding:4px 2px;text-align:right;">TIME</th>
+                                    <th id="ranking-th-time" style="display:none;font-family:'Press Start 2P',monospace;font-size:6px;color:#888;font-weight:normal;padding:4px 2px;text-align:right;">TIME</th>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- Data rows only: the scrollable zone, scrollbar track is only here -->
+                    <div id="ranking-list"
+                        style="background:#1a0f0a; width:100%; flex:1; min-height:0; overflow-y:scroll; text-align:left; padding:0 10px 8px; font-size:clamp(11px,1.6vh,15px); color:#fff; line-height:2.0; box-sizing:border-box; cursor: var(--cur-hand); user-select:none;">
+                        <table style="width:100%; border-collapse:collapse; table-layout:fixed;">
+                            <colgroup>
+                                <col style="width:36px">
+                                <col style="width:40px">
+                                <col>
+                                <col style="width:52px">
+                                <col class="ranking-col-value" style="width:88px">
+                                <col class="ranking-col-time" style="width:72px;display:none">
+                            </colgroup>
+                            <tbody id="ranking-tbody">
+                                <tr>
+                                    <td colspan="5" style="text-align:center; padding:16px;" data-i18n="rankingLoading">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <button id="ranking-close" class="pixel-btn btn-sprite btn-5"
+                    style="font-size: 13px; padding: 13px; width: 100%; flex-shrink: 0;"
+                    data-i18n="back">VOLVER</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ENDLESS FARM RANKING OVERLAY -->
+    <div id="endless-ranking-overlay"
+        style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:transparent; z-index:100002; justify-content:center; align-items:center;">
+        <div
+            style="position:relative; max-width:600px; width:96%; height:80vh; box-sizing:border-box; display:flex; flex-direction:column;">
+
+            <div id="endless-ranking-title" style="position:absolute; top:0; left:0; right:0; text-align:center; pointer-events:none;">
+                <span style="color:#f1c40f; font-size:20px; font-family:'Press Start 2P',monospace; text-shadow:2px 2px black;" data-i18n="endlessRanking">ENDLESS RANKING</span>
+            </div>
+
+            <div style="padding:20px; display:flex; flex-direction:column; gap:8px; flex:1; min-height:0; box-sizing:border-box;">
+                <!-- Nombre del jugador editable -->
+                <div id="endless-rank-namebar" style="display:flex;align-items:center;justify-content:center;gap:6px;flex-shrink:0;margin-top:8px;">
+                    <span style="color:#fff;font-family:'Press Start 2P',monospace;font-size:clamp(5px,0.8vh,7px);"><span data-i18n="rankingColName">NOMBRE</span>:</span>
+                    <input id="endless-rank-name-input" type="text" maxlength="20"
+                        style="background:#222;border:2px solid #f1c40f;color:#fff;font-family:'Press Start 2P',monospace;font-size:clamp(5px,0.8vh,7px);padding:3px 6px;width:120px;outline:none;"
+                        data-i18n-placeholder="yourNamePlaceholder" placeholder="TU NOMBRE">
+                    <button id="endless-rank-name-save"
+                        style="background:#27ae60;border:2px solid #fff;color:#fff;font-family:'Press Start 2P',monospace;font-size:clamp(5px,0.8vh,7px);padding:3px 7px;cursor: var(--cur-finger);">✓</button>
+                    <span id="endless-rank-name-ok" style="color:#2ecc71;font-family:'Press Start 2P',monospace;font-size:6px;display:none;" data-i18n="saved">¡Guardado!</span>
+                </div>
+                <p id="endless-ranking-subtitle"
+                    style="color:#ccc; font-size:clamp(6px,0.9vh,9px); text-align:center; margin:0; font-family:'Press Start 2P',monospace; flex-shrink:0;" data-i18n="topFarms">
+                    Top Farms</p>
+                <div style="overflow-y:auto; flex:1; min-height:0; scrollbar-color:transparent transparent;">
+                    <table
+                        style="width:100%; border-collapse:collapse; font-family:'Press Start 2P',monospace; font-size:clamp(5px,0.9vh,8px);">
+                        <thead>
+                            <tr style="color:#f1c40f; border-bottom:2px solid #555;">
+                                <th style="padding:4px 5px; text-align:left; white-space:nowrap;">#</th>
+                                <th style="padding:4px 5px; text-align:left;" data-i18n="rankingColFarm">FARM</th>
+                                <th style="padding:4px 5px; text-align:right;">🐔</th>
+                                <th style="padding:4px 5px; text-align:right;" data-i18n="rankingColEggs">EGGS</th>
+                                <th style="padding:4px 5px; text-align:right;" data-i18n="rankingColValue">VALUE</th>
+                                <th style="padding:4px 5px; text-align:right;" data-i18n="rankingColTime2">TIME</th>
+                            </tr>
+                        </thead>
+                        <tbody id="endless-ranking-tbody">
+                            <tr>
+                                <td colspan="6" style="text-align:center; padding:20px; color:#aaa;" data-i18n="rankingLoading">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <button id="endless-ranking-close" class="pixel-btn btn-sprite btn-5"
+                    style="font-size:13px; padding:13px; width:100%; flex-shrink:0;" data-i18n="back">VOLVER</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SPEEDRUN NAME INPUT OVERLAY -->
+    <!-- z-index 100005: por ENCIMA de retire-stats-overlay (100002). Se muestran a
+         la vez (la fase 3 los abre justo antes de pasar a fase 4/6, ver cinematic.js)
+         y con el mismo z-index que antes (100000) el cartel de stats lo tapaba del
+         todo — nunca se veía el panel de poner nombre aunque estuviera abierto. -->
+    <div id="name-input-overlay"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 100005; justify-content: center; align-items: center; flex-direction: column;">
+        <h1 style="color: #f1c40f; font-family: 'Press Start 2P', monospace; font-size: 24px; text-shadow: 2px 2px 0 #333; margin-bottom: 20px; text-align: center;"
+            data-i18n="newRecord">NEW RECORD!</h1>
+        <p id="final-speedrun-time"
+            style="color: white; font-family: 'Press Start 2P', monospace; font-size: 14px; margin-bottom: 10px;"
+            data-i18n="time">TIME: 00:00</p>
+        <p id="final-speedrun-chickens"
+            style="color: #2ecc71; font-family: 'Press Start 2P', monospace; font-size: 10px; margin-bottom: 10px;"
+            data-i18n="chickensFreed">Chickens Freed: 0</p>
+
+        <p style="color: #aaa; font-size: 8px; margin-bottom: 15px;" data-i18n="enterName">Enter your name for the
+            global ranking:</p>
+        <input type="text" id="speedrun-name-input" maxlength="15"
+            style="background: #222; color: #f1c40f; border: 4px solid #f1c40f; padding: 10px; font-size: 14px; font-family: 'Press Start 2P', monospace; width: 280px; text-align: center; text-transform: uppercase; margin-bottom: 15px;"
+            data-i18n-placeholder="yourNamePlaceholder" placeholder="YOUR NAME">
+        <p style="color: #aaa; font-size: 8px; margin-bottom: 8px;" data-i18n="community">Community:</p>
+        <select id="speedrun-market-select"
+            style="background: #222; color: #3498db; border: 4px solid #3498db; padding: 8px; font-size: 10px; font-family: 'Press Start 2P', monospace; width: 280px; text-align: center; margin-bottom: 20px; cursor: var(--cur-finger);">
+            <option value="" disabled selected data-i18n="selectCommunity">-- SELECT COMMUNITY --</option>
+            <option value="itchio">🎮 itch.io</option>
+            <option value="incrementaldb">📊 IncrementalDB</option>
+        </select>
+        <button id="speedrun-submit-btn" class="pixel-btn"
+            style="font-size: 12px; padding: 15px 30px; background: #2ecc71; color: white;"
+            data-i18n="submitScore">SUBMIT SCORE</button>
+    </div>
+
+    <script src="shared/vendor/pixi.min.js"></script>
+    <script>
+        // market de este build — cambia esto para generar otras distribuciones
+        // (ver shared/platform.js para los valores válidos).
+        window.GAME_MARKET = "itchio";
+        // Clase en <body> para poder condicionar CSS por market (ver
+        // "body:not(.market-crazygames) #desktop-banner" en style.css).
+        document.body.classList.add('market-' + window.GAME_MARKET);
+    </script>
+    <script>
+        // El SDK de CrazyGames (script, botón "salir" oculto, SDK.init()) SOLO se
+        // carga en modo crazygames — el resto de builds (galaxy, itch.io, etc.) no
+        // lo necesitan, y window._cgSdkReady se queda sin definir a propósito: todo
+        // lo que lo consume (shared/ads.js, shared/save.js, shared/shell.js) ya
+        // comprueba `if (window._cgSdkReady)` antes de usarlo — es el mismo camino
+        // que ya se recorría antes al probar en local sin el dominio de CrazyGames.
+        if (window.GAME_MARKET === "crazygames") {
+            document.addEventListener('DOMContentLoaded', function() {
+                var salir = document.getElementById('mm-salir-btn');
+                if (salir) salir.style.display = 'none';
+            });
+        }
+    </script>
+    <script>
+        if (window.GAME_MARKET === "crazygames") {
+            // Start SDK init as early as possible — before any game scripts run.
+            // All modules await this promise; the loading screen waits for it too.
+            console.log('[CG] GAME_MARKET =', window.GAME_MARKET);
+            console.log('[CG] CrazyGames global present:', !!window.CrazyGames);
+            console.log('[CG] CrazyGames.SDK present:', !!window.CrazyGames?.SDK);
+            if (window.CrazyGames?.SDK) {
+                console.log('[CG] Calling SDK.init()...');
+                window._cgSdkReady = window.CrazyGames.SDK.init()
+                    .then(() => { console.log('[CG] SDK.init() resolved OK'); })
+                    .catch((e) => { console.warn('[CG] SDK.init() failed:', e); });
+            } else {
+                console.warn('[CG] SDK not available — _cgSdkReady will be null');
+            }
+        }
+    </script>
+    <script src="shared/responsive.js"></script>
+    <script src="layout.js"></script>
+    <script src="intro-layout.js"></script>
+    <script src="portrait.js"></script>
+    <script>
+        (function() {
+            var s = window.MENU_MODE_ICON_SCALE != null ? window.MENU_MODE_ICON_SCALE : 1;
+            var y = window.MENU_MODE_ICON_Y     != null ? window.MENU_MODE_ICON_Y     : 15;
+            document.documentElement.style.setProperty('--menu-mode-icon-w',   (72 / 89 * s * 100).toFixed(1) + '%');
+            document.documentElement.style.setProperty('--menu-mode-icon-top', (y / 59 * 100).toFixed(1) + '%');
+            var _g = function(k,d){ return window[k] != null ? window[k] : d; };
+            document.documentElement.style.setProperty('--prado-name-bottom',    _g('MENU_PRADO_NAME_BOTTOM',8)    + '%');
+            document.documentElement.style.setProperty('--prado-name-size',      _g('MENU_PRADO_NAME_SIZE',10)     + 'px');
+            document.documentElement.style.setProperty('--prado-desc-size',      _g('MENU_PRADO_DESC_SIZE',7)      + 'px');
+            document.documentElement.style.setProperty('--prado-inner-pad',       _g('MENU_PRADO_INNER_PAD',4)       + '%');
+            document.documentElement.style.setProperty('--prado-desc-top',        _g('MENU_PRADO_DESC_TOP',30)       + '%');
+            document.documentElement.style.setProperty('--prado-play-size',      _g('MENU_PRADO_PLAY_SIZE',9)       + 'px');
+            document.documentElement.style.setProperty('--prado-btn-h',          _g('MENU_PRADO_BTN_H',28)          + 'px');
+            document.documentElement.style.setProperty('--prado-actions-bottom', _g('MENU_PRADO_ACTIONS_BOTTOM',5)  + '%');
+            document.documentElement.style.setProperty('--prado-restart-size',   _g('MENU_PRADO_RESTART_SIZE',8)   + 'px');
+        })();
+    </script>
+    <script src="shared/platform.js"></script>
+    <script src="shared/cursors.js"></script>
+    <script src="shared/utils.js"></script>
+    <script src="shared/engine.js"></script>
+    <script src="shared/shell.js"></script>
+    <script src="shared/pixi.js"></script>
+    <script src="shared/audio.js"></script>
+    <script>
+        // AdMob (Google Play) — bundle UMD vendorizado a mano (no hay bundler
+        // en este proyecto). Se autorregistra usando el global "capacitorExports",
+        // que NO lo inyecta el puente nativo de Capacitor (comprobado con logcat
+        // en dispositivo real) — es el nombre que usa el build oficial de
+        // @capacitor/core pensado para <script> sin bundler
+        // (node_modules/@capacitor/core/dist/capacitor.js), vendorizado aquí
+        // como shared/vendor/capacitor-core.js. Debe cargarse ANTES que
+        // admob-plugin.js, en este orden y de forma síncrona (document.write
+        // bloquea el parser hasta que cada uno termina).
+        //
+        // "Remove Ads" IAP usa un mecanismo DISTINTO (cordova-plugin-purchase,
+        // no capacitor-plugin-cdv-purchase — ver shared/iap.js): es un plugin
+        // Cordova de verdad, cargado por el propio puente de compatibilidad
+        // Cordova de Capacitor (cordova.js + cordova_plugins.js, generados por
+        // "npx cap sync android"), no por un bundle vendorizado a mano.
+        if (window.GAME_MARKET === "googleplay") {
+            document.write('<script src="shared/vendor/capacitor-core.js"><\/script>');
+            document.write('<script src="shared/vendor/admob-plugin.js"><\/script>');
+            // cordova.js (generado por "npx cap sync android" en la raíz servida,
+            // NO en shared/) carga cordova_plugins.js internamente y, con eso,
+            // plugins/cordova-plugin-purchase/www/store.js — que "clobbers"
+            // window.CdvPurchase y window.store. No hace falta bundler ni
+            // vendorizado a mano para esto, es soporte nativo de Capacitor.
+            document.write('<script src="cordova.js"><\/script>');
+        }
+    </script>
+    <script src="shared/ads.js"></script>
+    <script src="shared/iap.js"></script>
+    <script src="shared/save.js"></script>
+    <script src="shared/achievements.js"></script>
+    <script src="shared/intro.js"></script>
+    <script src="scenarios/farm/achievements.js"></script>
+    <script src="scenarios/farm/ending.js"></script>
+    <script src="scenarios/farm/cinematic-core.js"></script>
+    <script src="scenarios/farm/cinematic.js"></script>
+    <script src="scenarios/farm/offers.js"></script>
+    <script src="lang.js"></script>
+    <script src="scenarios/farm/script.js?v=3"></script>
+
+    <!-- SCROLL Y AUTOESCALADO -->
+    <script>
+        function syncShopHeight() {
+            const canvas = document.getElementById('gameCanvas');
+            const shop = document.getElementById('shop');
+            if (!canvas || !shop) return;
+            // Desktop only: the shop sits BESIDE the canvas and matches its height. In portrait the
+            // shop sits BELOW with its own CSS height (150px / 49vh expanded), so an inline maxHeight
+            // here can only clamp it. Clear it instead.
+            const isPortraitS = window.GAME_MODE === 'portrait'
+                || (document.body && document.body.classList.contains('mode-portrait'));
+            if (isPortraitS) { shop.style.maxHeight = ''; return; }
+            shop.style.maxHeight = canvas.clientHeight + 'px';
+        }
+
+        function performDesktopAutoScale() {
+            const canvas = document.getElementById('gameCanvas');
+            if (!canvas) return;
+
+            // Portrait is laid out entirely by CSS: canvas spans the full width, shop sits below.
+            // Test GAME_MODE, NOT the body class — this function also runs at parse time (bottom of
+            // this script), while .mode-portrait is only added on DOMContentLoaded by responsive.js.
+            // Without this, that early call baked desktop inline sizing (reserving ~38% on the right
+            // for the shop) onto the canvas, and inline styles beat the portrait stylesheet.
+            // Also clear any inline sizing a prior desktop-mode call may have left behind.
+            const isPortrait = window.GAME_MODE === 'portrait'
+                || (document.body && document.body.classList.contains('mode-portrait'));
+            if (isPortrait) {
+                canvas.style.width  = '';
+                canvas.style.height = '';
+                const faP = document.getElementById('farm-area');
+                if (faP) { faP.style.width = ''; faP.style.height = ''; }
+                return;
+            }
+
+            const natW = canvas.width || 800;
+            const natH = canvas.height || 650;
+
+            const isCinematic = document.body.classList.contains('is-cinematic');
+
+            // shop = 1fr, canvas = auto; estimamos ancho disponible para el canvas
+            // en pantallas muy estrechas el shop puede tener < 425px, así que
+            // garantizamos al menos 55% del viewport para el canvas
+            const shopEst = isCinematic ? 0 : Math.min(425, Math.floor(window.innerWidth * 0.38));
+            const availW  = isCinematic ? window.innerWidth : Math.max(Math.floor(window.innerWidth * 0.55), window.innerWidth - shopEst - 18);
+            const availH = window.innerHeight;
+
+            // Sin Math.max(1,...): permite escalar hacia abajo cuando no cabe
+            const scale = Math.min(availW / natW, availH / natH);
+
+            const w = Math.round(natW * scale) + 'px';
+            const h = Math.round(natH * scale) + 'px';
+            canvas.style.width  = w;
+            canvas.style.height = h;
+
+            const farmArea = document.getElementById('farm-area');
+            if (farmArea) {
+                // Al reducir, la grilla controla farm-area; solo forzamos el ancho en cinematic o upscale
+                farmArea.style.width  = isCinematic ? '100vw' : (scale >= 1 ? w : '');
+                // La ALTURA no se fuerza fuera de la cinemática. Antes, con scale >= 1, se le
+                // clavaba aquí la altura exacta del canvas: eso anulaba el `align-self: stretch`
+                // del grid y dejaba a .sky-extension / .earth-extension con 0px de alto, así que
+                // se veía el negro del body por encima y por debajo del canvas.
+                // Dejándola en '' (auto), farm-area ocupa toda la fila del grid y las extensiones
+                // se reparten el espacio sobrante (ver "Desktop: extensiones" en style.css).
+                farmArea.style.height = isCinematic ? '100vh' : '';
+            }
+
+            // ── Pantallas muy anchas y bajas (p.ej. Galaxy 1900×630): el canvas
+            // se topa con el alto antes que con el ancho, así que "farm" (auto)
+            // se queda pequeño y sobra mucho hueco horizontal. Ese hueco se lo
+            // llevaba entero el shop (1fr) hasta su max-width:600px, dejando un
+            // vacío asimétrico solo a la derecha de la tienda. En vez de eso,
+            // medimos si farm+shop ocupan menos que el viewport y, si sobra
+            // hueco, topamos #game-container a ese ancho real y lo centramos
+            // (margin:auto) — el fondo negro del body queda como franjas a
+            // ambos lados en vez de un hueco solo a un lado.
+            const gameContainer = document.getElementById('game-container');
+            const shop = document.getElementById('shop');
+            if (gameContainer && shop && !isCinematic) {
+                // Ancho máximo del shop: el que tendría de forma NATURAL (1fr, sin
+                // topar) en un monitor Full HD (1920×1080) — pedido explícito:
+                // "haz el maximo de la parte shop mas ancha en full hd y ese sera
+                // su ancho maximo siempre que se pueda evitando franjas negras".
+                // Se recalcula con la MISMA fórmula de arriba pero sustituyendo el
+                // viewport real por 1920×1080, así que si el canvas cambia de
+                // tamaño (natW/natH) el máximo se recalcula solo, sin número mágico.
+                const REF_W = 1920, REF_H = 1080;
+                const refShopEst = Math.min(425, Math.floor(REF_W * 0.38));
+                const refAvailW = Math.max(Math.floor(REF_W * 0.55), REF_W - refShopEst - 18);
+                const refScale = Math.min(refAvailW / natW, REF_H / natH);
+                const refFarmW = Math.round(natW * refScale);
+                shop.style.maxWidth = (REF_W - refFarmW) + 'px';
+
+                // Se limpia ANTES de medir: si no, una llamada previa que ya haya
+                // topado #game-container a un ancho estrecho sesga la medición de
+                // esta llamada (el grid se ve forzado a encoger farm/shop dentro
+                // de ese ancho viejo) y el resultado se va estrechando en cada
+                // resize/llamada en vez de partir siempre del estado natural.
+                gameContainer.style.width = '';
+                gameContainer.style.margin = '';
+                const farmW = farmArea ? farmArea.getBoundingClientRect().width : 0;
+                const shopW = shop.getBoundingClientRect().width;
+                const totalW = farmW + shopW;
+                const leftover = window.innerWidth - totalW;
+                if (farmW > 0 && shopW > 0 && leftover > 1) {
+                    gameContainer.style.width = Math.round(totalW) + 'px';
+                    gameContainer.style.margin = '0 auto';
+                } else {
+                    gameContainer.style.width = '';
+                    gameContainer.style.margin = '';
+                }
+            }
+        }
+
+        window.performDesktopAutoScale = performDesktopAutoScale;
+        window.addEventListener('resize', performDesktopAutoScale);
+        window.addEventListener('load', performDesktopAutoScale);
+        performDesktopAutoScale();
+    </script>
+    <div id="achievement-popup">
+        <span id="achievement-icon"></span>
+        <div>
+            <div id="achievement-badge">Achievement!</div>
+            <div id="achievement-title"></div>
+            <div id="achievement-desc"></div>
+        </div>
+    </div>
+
+    <div id="iap-toast">
+        <span id="iap-toast-text"></span>
+    </div>
+
+
+    <!-- PC/MOBILE MODE TOGGLE BUTTON -->
+    <!-- Tu colega penso ocultar el boton, pero con el F6 puedes verlo -->
+    <div id="mode-toggle-container" style="position: fixed; bottom: 16px; right: 16px; z-index: 999999; display: none;">
+        <button id="mode-toggle-btn" class="pixel-btn"
+            style="padding: 10px 14px; font-size: 10px; font-family: 'Press Start 2P', monospace; cursor: var(--cur-finger); text-shadow: 1px 1px 0 #333; transition: transform 0.1s; display: flex; align-items: center; justify-content: center;"></button>
+    </div>
+    <script>
+        (function () {
+            const btn = document.getElementById('mode-toggle-btn');
+            const isPortrait = window.GAME_MODE === 'portrait';
+
+            // F6 muestra/oculta este botón junto con los debug overlays de intro.js
+            // También crea/actualiza el recuadro de debug de la sombra del logo (magenta)
+            var _shadowDbEl  = null;
+            var _logoDbEl    = null;
+            var _dbInfoEl    = null;
+            var _shadowDbOn  = false;
+            function _updateShadowDebug() {
+                var ls   = document.getElementById('mm-logo-shadow');
+                var rig  = document.getElementById('mm-hang-rig');
+                var cont = document.getElementById('intro-pan-container');
+                if (!ls || !cont) return;
+
+                // ── Shadow outline box (positioned from BCR — the shadow lives in the rig now) ──
+                if (!_shadowDbEl) {
+                    _shadowDbEl = document.createElement('div');
+                    _shadowDbEl.style.cssText = 'position:absolute;pointer-events:none;z-index:9997;box-sizing:border-box;border:2px solid rgba(255,0,255,0.9);background:rgba(255,0,255,0.08);';
+                    cont.appendChild(_shadowDbEl);
+                } else if (_shadowDbEl.parentElement !== cont) {
+                    cont.appendChild(_shadowDbEl);
+                }
+                var _cbrS = cont.getBoundingClientRect();
+                var _toRS = _cbrS.width > 0 ? _REF_W / _cbrS.width : 1;
+                var _sbrS = ls.getBoundingClientRect();
+                _shadowDbEl.style.left      = Math.round((_sbrS.left - _cbrS.left) * _toRS) + 'px';
+                _shadowDbEl.style.top       = Math.round((_sbrS.top  - _cbrS.top ) * _toRS) + 'px';
+                _shadowDbEl.style.bottom    = 'auto';
+                _shadowDbEl.style.width     = Math.round(_sbrS.width  * _toRS) + 'px';
+                _shadowDbEl.style.height    = Math.round(_sbrS.height * _toRS) + 'px';
+                _shadowDbEl.style.transform = 'none';
+                _shadowDbEl.style.display   = _shadowDbOn ? 'block' : 'none';
+
+                // ── Logo (rig) outline box ───────────────────────────────────
+                var rigParent = rig ? rig.parentElement : null;
+                if (rig && rigParent) {
+                    if (!_logoDbEl) {
+                        _logoDbEl = document.createElement('div');
+                        _logoDbEl.style.cssText = 'position:absolute;pointer-events:none;z-index:9998;box-sizing:border-box;border:2px solid rgba(0,255,255,0.9);background:rgba(0,255,255,0.06);';
+                        rigParent.appendChild(_logoDbEl);
+                    } else if (_logoDbEl.parentElement !== rigParent) {
+                        rigParent.appendChild(_logoDbEl);
+                    }
+                    // Track the actual SIGN (#mm-logo), not the whole rig. The rig includes
+                    // ~55px of collapsed rope headroom at the top (margin-top on #mm-logo), which
+                    // made this box float above the sign and look misaligned vs the red collider.
+                    var _lgEl = document.getElementById('mm-logo');
+                    var _rigLnum = parseInt(rig.style.left) || 0;
+                    var _rigTnum = parseInt(rig.style.top)  || 0;
+                    _logoDbEl.style.left    = (_rigLnum + (_lgEl ? _lgEl.offsetLeft : 0)) + 'px';
+                    _logoDbEl.style.top     = (_rigTnum + (_lgEl ? _lgEl.offsetTop  : 0)) + 'px';
+                    _logoDbEl.style.width   = (_lgEl ? _lgEl.offsetWidth  : rig.offsetWidth)  + 'px';
+                    _logoDbEl.style.height  = (_lgEl ? _lgEl.offsetHeight : rig.offsetHeight) + 'px';
+                    _logoDbEl.style.transform = rig.style.transform || '';
+                    _logoDbEl.style.display = _shadowDbOn ? 'block' : 'none';
+                }
+
+                // ── Coordinate info panel (fixed, top-left of viewport) ──────
+                if (!_dbInfoEl) {
+                    _dbInfoEl = document.createElement('div');
+                    _dbInfoEl.style.cssText = 'position:fixed;top:4px;left:4px;z-index:99999;pointer-events:none;font-family:monospace;font-size:10px;line-height:1.5;color:#fff;background:rgba(0,0,0,0.82);padding:6px 8px;border-radius:4px;white-space:pre;';
+                    document.body.appendChild(_dbInfoEl);
+                }
+                if (_shadowDbOn) {
+                    // Everything computed in reference px from BCR relative to the container,
+                    // so it's correct wherever the shadow/rig currently live.
+                    var _cbrD = cont.getBoundingClientRect();
+                    var _toRD = _cbrD.width > 0 ? _REF_W / _cbrD.width : 1;
+                    var _lg   = document.getElementById('mm-logo');
+                    var _sbrD = ls.getBoundingClientRect();
+                    var shCx = Math.round((_sbrD.left + _sbrD.width / 2 - _cbrD.left) * _toRD);
+                    var shT  = Math.round((_sbrD.top - _cbrD.top) * _toRD);
+                    var shW  = Math.round(_sbrD.width  * _toRD);
+                    var shH  = Math.round(_sbrD.height * _toRD);
+                    // Sign (#mm-logo) bounds in ref px.
+                    var _lbrD = _lg ? _lg.getBoundingClientRect() : (rig ? rig.getBoundingClientRect() : null);
+                    var rigL = _lbrD ? Math.round((_lbrD.left - _cbrD.left) * _toRD) : 0;
+                    var rigT = _lbrD ? Math.round((_lbrD.top  - _cbrD.top ) * _toRD) : 0;
+                    var rigW = _lbrD ? Math.round(_lbrD.width  * _toRD) : 0;
+                    var rigH = _lbrD ? Math.round(_lbrD.height * _toRD) : 0;
+                    var rigCx = rigL + Math.round(rigW / 2);
+                    var rigBot = rigT + rigH;
+                    var diffX = shCx - rigCx;
+                    var diffY = shT - rigBot;
+                    var inSameParent = rig && ls && (ls.parentElement === rig || (rig.contains(ls))) ? 'YES (in rig)' : 'NO';
+                    _dbInfoEl.textContent =
+                        '— SHADOW (ref px, translateX-50%) —\n' +
+                        '  left(center): ' + shCx + '  top: ' + shT + '  w: ' + shW + '\n' +
+                        '— LOGO RIG —\n' +
+                        '  left: ' + rigL + '  top: ' + rigT + '  w: ' + rigW + '  h: ' + rigH + '\n' +
+                        '  center-x: ' + rigCx + '  bottom: ' + rigBot + '\n' +
+                        '— DIFF (shadow - rig) —\n' +
+                        '  ΔX(center): ' + diffX + '  ΔY(sh.top - rig.bot): ' + diffY + '\n' +
+                        '  same parent: ' + inSameParent;
+                    _dbInfoEl.style.display = 'block';
+                } else {
+                    _dbInfoEl.style.display = 'none';
+                }
+            }
+            document.addEventListener('keydown', function (e) {
+                if (!window.DEBUG) return;
+                if (e.key !== 'F6') return;
+                _shadowDbOn = !_shadowDbOn;
+                var c = document.getElementById('mode-toggle-container');
+                if (c) c.style.display = _shadowDbOn ? 'block' : 'none';
+                _updateShadowDebug();
+            });
+            // Actualizar cuando la sombra o el rig cambian de posición
+            document.addEventListener('DOMContentLoaded', function () {
+                var ls  = document.getElementById('mm-logo-shadow');
+                var rig = document.getElementById('mm-hang-rig');
+                if (ls) new MutationObserver(function () { if (_shadowDbOn) _updateShadowDebug(); })
+                    .observe(ls, { attributes: true, attributeFilter: ['style'] });
+                if (rig) new MutationObserver(function () { if (_shadowDbOn) _updateShadowDebug(); })
+                    .observe(rig, { attributes: true, attributeFilter: ['style'] });
+            });
+
+            // Mostrar modo actual y hacia dónde cambia al pulsar
+            if (isPortrait) {
+                btn.textContent = "🖥️ landscape";
+                btn.style.background = "#2ecc71";
+                btn.style.color = "white";
+                btn.style.borderColor = "#fff #179b4c #179b4c #fff";
+                btn.style.boxShadow = "3px 3px 0px rgba(0,0,0,0.15)";
+            } else {
+                btn.textContent = "📱 portrait";
+                btn.style.background = "#e67e22";
+                btn.style.color = "white";
+                btn.style.borderColor = "#fff #a04000 #a04000 #fff";
+                btn.style.boxShadow = "3px 3px 0px rgba(0,0,0,0.15)";
+            }
+
+            btn.addEventListener('click', () => {
+                const nextMode = isPortrait ? 'landscape' : 'portrait';
+                const url = new URL(window.location.href);
+                url.searchParams.set('mode', nextMode);
+                window.location.href = url.toString();
+            });
+        })();
+    </script>
+
+    <script>
+        // ── Main menu + Pause navigation ─────────────────────────────────────────
+        (function () {
+            var _pauseBackTarget = 'pause'; // 'pause' | 'main'
+            var _currentPausePanel = 'pause-main';
+
+            var _panelTitleKeys = { 'pause-main': 'pause', 'pause-settings': 'settings', 'pause-logros': 'achievements' };
+            function _showPausePanel(id) {
+                _currentPausePanel = id;
+                ['pause-main', 'pause-settings', 'pause-logros'].forEach(function (p) {
+                    var el = document.getElementById(p);
+                    if (el) el.style.display = p === id ? 'flex' : 'none';
+                });
+                var titleEl = document.getElementById('pause-panel-title');
+                if (titleEl) titleEl.querySelector('span').textContent = (window.t ? window.t(_panelTitleKeys[id]) : _panelTitleKeys[id]) || '';
+            }
+            window._refreshPauseTitle = function () {
+                var titleEl = document.getElementById('pause-panel-title');
+                if (titleEl) titleEl.querySelector('span').textContent = (window.t ? window.t(_panelTitleKeys[_currentPausePanel]) : '') || '';
+            };
+
+            var _panRafId      = null;
+            var _panEndPx      = 0;   // current actual pan (updated when mode opens/closes)
+            var _introPanEndPx = 0;   // pan value at end of intro (before any mode-open panning)
+
+            var _logoReleased = false;
+            var _fallAnim     = null;
+            var _shadowAnims  = [];
+
+            var _introDone    = false;
+            var _rigTopPct    = null;
+            var _rigWidthFrac = null;
+            var _rigZIndex    = null;
+            var _shadowTopPct = null;
+            var _displayScale = 1; // scale applied to #intro-scale-root (fills viewport)
+            var _visRefH = 1080;  // actual visible reference height = physVH / _displayScale
+
+            // Reference canvas constants (Option B: virtual 1920×1080 viewport over 1920×2229 scene)
+            var _REF_W  = 1920;
+            var _REF_H  = 2229;
+            var _REF_VH = 1080; // design reference height (not always fully visible)
+
+            // Viewport helpers — use innerWidth/Height directly.
+            // outerWidth is unreliable (DevTools simulation: outerWidth=1920, innerWidth=639 → z=3 → massive zoom).
+            // position:fixed intro overlays already work in CSS pixels, so no zoom correction needed.
+            function _zFactor() { return 1; }
+            function _physVW() { return Math.round(window._safeInnerW ? window._safeInnerW() : window.innerWidth); }
+            function _physVH() { return Math.round(window._safeInnerH ? window._safeInnerH() : window.innerHeight); }
+            function _applyScaling() {
+                var z = _zFactor();
+                var physW = _physVW(), physH = _physVH();
+                _displayScale = Math.max(physW / _REF_W, physH / _REF_VH);
+                // Actual reference height visible: varies when display is width-constrained
+                // (e.g. non-fullscreen browser on widescreen monitor → physVH < 1080 * displayScale)
+                _visRefH = Math.round(physH / _displayScale);
+                var wrapper = document.getElementById('intro-pan-wrapper');
+                if (!wrapper) return;
+                wrapper.style.top    = '0';
+                wrapper.style.left   = '0';
+                wrapper.style.right  = 'auto';
+                wrapper.style.bottom = 'auto';
+                wrapper.style.width  = physW + 'px';
+                wrapper.style.height = physH + 'px';
+                wrapper.style.transformOrigin = 'top left';
+                wrapper.style.transform = 'scale(' + (1 / z).toFixed(6) + ')';
+                var scaleRoot = document.getElementById('intro-scale-root');
+                if (scaleRoot) {
+                    scaleRoot.style.transformOrigin = 'top center';
+                    scaleRoot.style.transform = 'scale(' + _displayScale.toFixed(6) + ')';
+                }
+                if (window._flashDiag) window._flashDiag('_applyScaling', _displayScale);
+            }
+
+            // DIAGNÓSTICO TEMPORAL — registra, frame a frame durante los primeros
+            // ~3s, qué escala está REALMENTE aplicada sobre #intro-scale-root, junto
+            // con window.innerWidth/innerHeight/screen.width/screen.height en ese
+            // instante exacto. Objetivo: ver con datos reales si hay algún frame con
+            // una escala anómala (el flash "gigante" reportado), en vez de seguir
+            // adivinando la causa. Quitar en cuanto quede diagnosticado.
+            (function () {
+                var _t0 = performance.now();
+                var _sr = document.getElementById('intro-scale-root');
+                var _lastLogged = null;
+                window._flashDiag = function (source, val) {
+                    console.log('[FLASH-DIAG] src=' + source + ' scale=' + (val != null ? val.toFixed(4) : '?') +
+                        ' iw=' + window.innerWidth + ' ih=' + window.innerHeight +
+                        ' sw=' + screen.width + ' sh=' + screen.height +
+                        ' t=' + (performance.now() - _t0).toFixed(1));
+                };
+                function _tick() {
+                    var elapsed = performance.now() - _t0;
+                    if (elapsed > 3000) return;
+                    var live = _sr ? getComputedStyle(_sr).transform : null;
+                    if (live !== _lastLogged) {
+                        _lastLogged = live;
+                        console.log('[FLASH-DIAG] computed-transform=' + live +
+                            ' iw=' + window.innerWidth + ' ih=' + window.innerHeight +
+                            ' sw=' + screen.width + ' sh=' + screen.height +
+                            ' hidden=' + document.hidden +
+                            ' t=' + elapsed.toFixed(1));
+                    }
+                    requestAnimationFrame(_tick);
+                }
+                requestAnimationFrame(_tick);
+            })();
+
+            // Modal slide helpers (used by intro menu buttons)
+            function _slideIn(panelId) {
+                var p = document.getElementById(panelId);
+                if (!p) return;
+                p.classList.remove('mm-slide-out');
+                void p.offsetWidth;
+                p.classList.add('mm-slide-in');
+            }
+            function _slideOut(panelId, cb) {
+                var p = document.getElementById(panelId);
+                if (!p) { if (cb) cb(); return; }
+                p.classList.remove('mm-slide-in');
+                p.classList.add('mm-slide-out');
+                p.addEventListener('animationend', function _rm() {
+                    p.removeEventListener('animationend', _rm);
+                    // Keep mm-slide-out so fill:both holds translateY(110%) until
+                    // _slideIn resets it — avoids the 1-frame center flash on close.
+                    if (cb) cb();
+                });
+            }
+            function _barHide() {
+                var b = document.getElementById('mm-bottom-bar');
+                var p = document.getElementById('mm-privacy-link');
+                if (!b) return;
+                b.style.transition = 'opacity 0.3s ease';
+                b.style.opacity = '0';
+                b.style.pointerEvents = 'none';
+                if (p) { p.style.transition = 'opacity 0.3s ease'; p.style.opacity = '0'; p.style.pointerEvents = 'none'; }
+                setTimeout(function() {
+                    if (b.style.opacity === '0') b.style.display = 'none';
+                    if (p && p.style.opacity === '0') p.style.display = 'none';
+                }, 320);
+            }
+            function _barShow() {
+                var b = document.getElementById('mm-bottom-bar');
+                var p = document.getElementById('mm-privacy-link');
+                if (!b) return;
+                b.style.opacity = '0';
+                b.style.display = 'flex';
+                b.style.transition = 'opacity 0.4s ease';
+                if (p) { p.style.opacity = '0'; p.style.display = 'block'; p.style.transition = 'opacity 0.4s ease'; }
+                requestAnimationFrame(function() {
+                    requestAnimationFrame(function() {
+                        b.style.opacity = '1';
+                        b.style.pointerEvents = 'auto';
+                        if (p) { p.style.opacity = '0.5'; p.style.pointerEvents = 'auto'; }
+                    });
+                });
+            }
+
+            function _releaseLogo(silent) {
+                if (_logoReleased) return;
+                _logoReleased = true;
+                var rig   = document.getElementById('mm-hang-rig');
+                var ropeL = document.getElementById('mm-rope-l');
+                var ropeR = document.getElementById('mm-rope-r');
+                if (!rig) {
+                    if (!silent && window.GameAudio) window.GameAudio.playSound(window.GameAudio.sfxLogoFall, 0.6);
+                    _onLogoLand(window.innerWidth / 2, window.innerHeight * 0.3);
+                    return;
+                }
+                // Snap ropes
+                if (ropeL) ropeL.style.animation = 'mm-rope-snap 0.22s ease-in forwards';
+                if (ropeR) {
+                    ropeR.style.animationDelay = '0.06s';
+                    ropeR.style.animation = 'mm-rope-snap 0.22s ease-in forwards';
+                }
+                // Drop logo ~0.26s after ropes snap
+                setTimeout(function () {
+                    var rigRect  = rig.getBoundingClientRect();
+                    // Convert CSS px → reference px for container-local calculations
+                    var _toRef   = _zFactor() / _displayScale;
+                    var rigRefTop    = rigRect.top    * _toRef;
+                    var rigRefHeight = rigRect.height * _toRef;
+                    var _landY   = (window.GAME_MODE === 'portrait' && window.MENU_PORTRAIT_LOGO_LAND_Y != null)
+                                    ? window.MENU_PORTRAIT_LOGO_LAND_Y : null;
+                    var _ilc3 = window.INTRO_LAYOUT.get();
+                    // fallDist in reference px (use actual visible height so logo lands at logoFrac of the real viewport)
+                    var fallDist = _landY != null
+                        ? Math.max(40, _landY * _toRef - rigRefTop - rigRefHeight)
+                        : Math.max(_ilc3.logoMinFall, _visRefH * _ilc3.logoFrac - rigRefHeight - rigRefTop) + _ilc3.logoOffset;
+                    // CSS px for the rig WAAPI animation (rig lives in mm-home, not in scale-root)
+                    var fallDistCSS = fallDist / _toRef;
+                    // Keep the shadow as a CHILD of the rig, anchored at the sign's feet (bottom:1px).
+                    // This is the key: the shadow shares the rig's coordinate space, so where the sign
+                    // ends up, the shadow is EXACTLY there — no viewport↔container conversion, no pan
+                    // timing, no margin math, no post-landing snap. Correctness by construction.
+                    var _logoShadow = document.getElementById('mm-logo-shadow');
+                    if (_logoShadow) {
+                        if (_logoShadow.parentElement !== rig) rig.appendChild(_logoShadow);
+                        _logoShadow.style.position = 'absolute';
+                        _logoShadow.style.left     = '50%';
+                        _logoShadow.style.top      = 'auto';
+                        _logoShadow.style.bottom   = '1px';   // at the sign's feet
+                        _logoShadow.style.width    = '97%';
+                        _logoShadow.style.transform = 'translateX(-50%) scaleX(0.04)';
+                        _logoShadow.style.opacity   = '0';
+                    }
+                    var _FALL_DURATION_MS = 520;
+                    // El sonido de golpe suena un poco ANTES de que la animación de
+                    // caída termine del todo (en vez de esperar a onfinish) — así se
+                    // siente sincronizado con el instante real de impacto en vez de
+                    // ir por detrás. Ajusta este valor para adelantarlo/retrasarlo más.
+                    var _LOGO_FALL_SOUND_LEAD_MS = 800;
+                    setTimeout(function () {
+                        if (!silent && window.GameAudio) window.GameAudio.playSound(window.GameAudio.sfxLogoFall, 0.6);
+                    }, Math.max(0, _FALL_DURATION_MS - _LOGO_FALL_SOUND_LEAD_MS));
+                    _fallAnim = rig.animate([
+                        { transform: 'translateX(-50%) translateY(0px)' },
+                        { transform: 'translateX(-50%) translateY(' + fallDistCSS + 'px)' }
+                    ], { duration: _FALL_DURATION_MS, fill: 'forwards', easing: 'cubic-bezier(0.4,0,1,0.95)' });
+                    // Shadow counter-translates (fallDistCSS → 0, SAME easing as the rig). The rig drops
+                    // by +fallDistCSS·E(t); the shadow rises by fallDistCSS·(1−E(t)) inside it, so their
+                    // sum is a constant fallDistCSS → the shadow stays FIXED on the ground while the sign
+                    // falls toward it, and ends at translateY(0)=feet with scaleX(1). Zero snap.
+                    if (_logoShadow) {
+                        // Same easing as the rig so translateY tracks fallDistCSS·(1−E(t)) exactly and
+                        // the shadow stays glued to the ground the whole fall, landing at the feet.
+                        _shadowAnims.push(_logoShadow.animate([
+                            { transform: 'translateX(-50%) translateY(' + fallDistCSS + 'px) scaleX(0.04)', opacity: 0 },
+                            { transform: 'translateX(-50%) translateY(0px) scaleX(1)', opacity: 0.58 }
+                        ], { duration: 520, fill: 'forwards', easing: 'cubic-bezier(0.4,0,1,0.95)' }));
+                    }
+                    _fallAnim.onfinish = function () {
+                        // Shadow is a child of the rig at the sign's feet — nothing to correct.
+                        var r = rig.getBoundingClientRect();
+                        _onLogoLand(r.left + r.width / 2, r.bottom);
+                    };
+                }, 260);
+            }
+
+            function _onLogoLand(cx, cy) {
+                var overlay = document.getElementById('main-menu-overlay');
+                var cont = document.getElementById('intro-pan-container');
+                // Force the pan to its FINAL position before reading the container box. The shadow was
+                // pre-placed at the final-pan ground; if the pan were still mid-flight here, the rig
+                // would be converted into "mid-pan" ref space and land ~15px off the shadow. Snapping
+                // guarantees rig and shadow share the same (final) coordinate space → no landing jump.
+                if (_panRafId) { cancelAnimationFrame(_panRafId); _panRafId = null; }
+                if (cont) cont.style.transform = 'translateY(' + _panEndPx + 'px)';
+                // Read cr BEFORE starting the shake animation on cont.
+                // If the shake's first frame has already shifted cont when getBCR fires, the snap
+                // position will be wrong and the logo will appear to drift upward after landing.
+                var cr   = cont ? cont.getBoundingClientRect() : null;
+                var _shakeEl = document.getElementById('intro-pan-container') || overlay;
+                if (_shakeEl) {
+                    _shakeEl.style.animation = 'mm-shake-translate 0.45s ease-out';
+                    setTimeout(function () { _shakeEl.style.animation = ''; }, 460);
+                }
+
+                // Pass logo bounds to GameIntro for persistent collision.
+                // Use the actual logo image bounds (no bottom trim — MSA collision handles vertical entry).
+                if (cr && window.GameIntro && window.GameIntro.setLogoRect) {
+                    var logoEl = document.getElementById('mm-logo');
+                    if (logoEl) {
+                        var lr = logoEl.getBoundingClientRect();
+                        window.GameIntro.setLogoRect({
+                            xMin: (lr.left   - cr.left) / cr.width  * 100,
+                            xMax: (lr.right  - cr.left) / cr.width  * 100,
+                            yMin: (cr.bottom - lr.bottom) / cr.height * 100,
+                            yMax: (cr.bottom - lr.top  ) / cr.height * 100,
+                        });
+                    }
+                }
+
+                // Move rig into pan-container so it z-sorts with animals.
+                // Container is in reference px space (1920×2229); getBoundingClientRect values
+                // are CSS px and must be multiplied by _toRef (= z / _displayScale) to convert.
+                var rig = document.getElementById('mm-hang-rig');
+                if (rig && cont && cr) {
+                    // Read position BEFORE cancelling (fill:forwards still active)
+                    var rr = rig.getBoundingClientRect();
+                    if (_fallAnim) { _fallAnim.cancel(); _fallAnim = null; }
+                    // CSS px → reference px. Derive from the container's actual BCR width instead of
+                    // _displayScale: portrait.js may apply a different scale to #intro-scale-root, so
+                    // _displayScale would place the rig where the % based collider (line ~1340) is NOT.
+                    // Using cr.width/_REF_W guarantees the sprite lands exactly on its collider.
+                    var _toRef2 = cr.width > 10 ? (_REF_W / cr.width) : (_zFactor() / _displayScale);
+                    rig.style.position  = 'absolute';
+                    rig.style.left      = Math.round((rr.left  - cr.left) * _toRef2) + 'px';
+                    rig.style.top       = Math.round((rr.top   - cr.top)  * _toRef2) + 'px';
+                    rig.style.width     = Math.round(rr.width  * _toRef2) + 'px';
+                    rig.style.transform = 'none';
+                    // Z-index: logo bottom edge determines depth (ratio — no conversion needed)
+                    var logoYMin = (cr.bottom - rr.bottom) / cr.height * 100;
+                    rig.style.zIndex = String(Math.round(1000 - logoYMin * 10));
+                    cont.appendChild(rig);
+                    // Moving to a new parent resets CSS animations — freeze ropes in their snapped state.
+                    var _rSnL = document.getElementById('mm-rope-l');
+                    var _rSnR = document.getElementById('mm-rope-r');
+                    if (_rSnL) { _rSnL.style.animation = 'none'; _rSnL.style.opacity = '0'; _rSnL.style.transform = 'scaleY(0)'; }
+                    if (_rSnR) { _rSnR.style.animation = 'none'; _rSnR.style.opacity = '0'; _rSnR.style.transform = 'scaleY(0)'; }
+                    _rigTopPct    = (rr.top  - cr.top)  / cr.height * 100; // ratio ✓
+                    _rigWidthFrac = rr.width / cr.width;                    // ratio ✓
+                    _rigZIndex    = rig.style.zIndex;
+
+                    // On very short viewports the JUGAR button may overlap the logo sign.
+                    // Push the button below the logo bottom (both live in reference px container).
+                    var _jBtnOL = document.getElementById('mm-jugar-btn');
+                    if (_jBtnOL) {
+                        var _rigTopRef = Math.round((rr.top  - cr.top)  * _toRef2);
+                        var _rigBotRef = _rigTopRef + rig.offsetHeight;
+                        var _jBotRef   = Math.round((1 - parseFloat(_jBtnOL.style.bottom) / 100) * _REF_H);
+                        var _jTopRef   = _jBotRef - _jBtnOL.offsetHeight;
+                        if (_jTopRef < _rigBotRef + 12) {
+                            var _newBot  = _rigBotRef + 12 + _jBtnOL.offsetHeight;
+                            var _newYMin = Math.max(1, Math.round((1 - _newBot / _REF_H) * 100));
+                            _jBtnOL.style.bottom = _newYMin + '%';
+                            _jBtnOL.style.zIndex = String(Math.max(1, 1000 - _newYMin * 10));
+                        }
+                    }
+                }
+
+                // Anchor the shadow to the sign now that the rig is in the container (ref px space).
+                // This is the definitive placement — supersedes the transient BCR correction in onfinish.
+                _anchorShadowToSign();
+
+                if (window.GameIntro && window.GameIntro.addLogoWakes) {
+                    window.GameIntro.addLogoWakes();
+                }
+                if (window.GameIntro && window.GameIntro.wakeAll) {
+                    var cxPct = cr ? (cx - cr.left) / cr.width * 100 : 50;
+                    window.GameIntro.wakeAll({ centerX: cxPct });
+                }
+                var skipBtn = document.getElementById('mm-skip-btn');
+                if (skipBtn) skipBtn.style.display = 'none';
+
+                // Bounce the JUGAR crate (inner div = crate + text together) on logo impact
+                var jugarInner = document.querySelector('#mm-jugar-btn > div');
+                if (jugarInner) {
+                    var _bounceAnim = jugarInner.animate([
+                        { transform: 'translateY(0px)'  },
+                        { transform: 'translateY(14px)' },   // compress on impact
+                        { transform: 'translateY(-22px)' },  // spring up
+                        { transform: 'translateY(8px)'  },   // fall back
+                        { transform: 'translateY(-12px)' },  // up again
+                        { transform: 'translateY(4px)'  },   // small fall
+                        { transform: 'translateY(-5px)' },   // tiny up
+                        { transform: 'translateY(0px)'  }    // settle
+                    ], { duration: 850, easing: 'ease-out', fill: 'forwards' });
+                    _bounceAnim.onfinish = function () { _bounceAnim.cancel(); jugarInner.style.transform = ''; };
+                }
+
+                // Enable grab-and-drop: player can lift the logo and release it for another impact
+                (function() {
+                    var _rig    = document.getElementById('mm-hang-rig');
+                    var _shadow = document.getElementById('mm-logo-shadow');
+                    if (!_rig || !cont) return;
+                    _rig.style.pointerEvents = 'auto';
+                    _rig.style.cursor        = 'grab';
+
+                    // Rig is now in pan-container (reference px space); mouse events are CSS px.
+                    // Convert drag deltas to reference px so the transform matches the coordinate space.
+                    var _drag = false, _startY = 0, _liftCSS = 0, _offsetY = 0;
+
+                    function _move(e) {
+                        if (!_drag) return;
+                        var cy = e.touches ? e.touches[0].clientY : e.clientY;
+                        _liftCSS = Math.min(0, cy - _startY);
+                        _offsetY = Math.round(_liftCSS * (_zFactor() / _displayScale));
+                        _rig.style.transform = 'translateY(' + _offsetY + 'px)';
+                        // Shadow shrinks and fades as logo is lifted (use visual CSS px for fraction)
+                        if (_shadow) {
+                            var _fr = Math.min(1, Math.abs(_liftCSS) / 150);
+                            _shadow.style.opacity   = String(0.58 - _fr * 0.48);
+                            _shadow.style.transform = 'translateX(-50%) scaleX(' + (1 - _fr * 0.65) + ')';
+                        }
+                    }
+
+                    function _up() {
+                        if (!_drag) return;
+                        _drag = false;
+                        document.removeEventListener('mousemove', _move);
+                        document.removeEventListener('mouseup',   _up);
+                        document.removeEventListener('touchmove', _move);
+                        document.removeEventListener('touchend',  _up);
+                        _rig.style.cursor = 'grab';
+
+                        var lift = Math.abs(_liftCSS); // visual CSS px for duration/shadow
+                        if (lift < 20) {
+                            _rig.style.transform = '';
+                            if (_shadow) { _shadow.style.opacity = '0.58'; _shadow.style.transform = 'translateX(-50%) scaleX(1)'; }
+                            return;
+                        }
+
+                        var dur = Math.max(300, Math.min(620, lift * 1.8));
+
+                        var dropAnim = _rig.animate([
+                            { transform: 'translateY(' + _offsetY + 'px)' },
+                            { transform: 'translateY(0px)' }
+                        ], { duration: dur, easing: 'cubic-bezier(0.4,0,1,0.95)', fill: 'forwards' });
+
+                        // Shadow grows back in sync with the fall
+                        if (_shadow) {
+                            var _sfr = Math.min(1, lift / 150);
+                            _shadowAnims.push(_shadow.animate([
+                                { transform: 'translateX(-50%) scaleX(' + (1 - _sfr * 0.65) + ')', opacity: String(0.58 - _sfr * 0.48) },
+                                { transform: 'translateX(-50%) scaleX(1)',                          opacity: '0.58' }
+                            ], { duration: dur, easing: 'ease-out', fill: 'forwards' }));
+                        }
+
+                        dropAnim.onfinish = function() {
+                            dropAnim.cancel();
+                            _rig.style.transform = '';
+                            if (window.GameAudio) window.GameAudio.playSound(window.GameAudio.sfxLogoHit, 0.6);
+                            if (_shadow) { _shadow.style.opacity = '0.58'; _shadow.style.transform = 'translateX(-50%) scaleX(1)'; }
+                            var _ov  = document.getElementById('main-menu-overlay');
+                            var _shakeEl2 = document.getElementById('intro-pan-container') || _ov;
+                            if (_shakeEl2) {
+                                _shakeEl2.style.animation = 'mm-shake-translate 0.45s ease-out';
+                                setTimeout(function() { _shakeEl2.style.animation = ''; }, 460);
+                            }
+                            var cr2 = cont ? cont.getBoundingClientRect() : null;
+                            var r2  = _rig.getBoundingClientRect();
+                            if (window.GameIntro && window.GameIntro.addLogoWakes) {
+                                window.GameIntro.addLogoWakes();
+                            }
+                            if (window.GameIntro && window.GameIntro.wakeAll) {
+                                window.GameIntro.wakeAll({ centerX: cr2 ? (r2.left + r2.width / 2 - cr2.left) / cr2.width * 100 : 50 });
+                            }
+                        };
+                    }
+
+                    function _startDrag(clientY) {
+                        // Cancel tracked shadow animations (explicit refs, reliable across WebView versions)
+                        while (_shadowAnims.length) { try { _shadowAnims.pop().cancel(); } catch(e) {} }
+                        if (_shadow) {
+                            // Fallback: also cancel via getAnimations() for any untracked ones
+                            try { _shadow.getAnimations().forEach(function(a) { a.cancel(); }); } catch(e) {}
+                            _shadow.style.opacity   = '0.58';
+                            _shadow.style.transform = 'translateX(-50%) scaleX(1)';
+                        }
+                        _drag = true; _startY = clientY; _liftCSS = 0; _offsetY = 0;
+                    }
+
+                    _rig.addEventListener('mousedown', function(e) {
+                        if (e.button !== 0) return;
+                        e.preventDefault();
+                        _startDrag(e.clientY);
+                        _rig.style.cursor = 'grabbing';
+                        document.addEventListener('mousemove', _move);
+                        document.addEventListener('mouseup',   _up);
+                    });
+
+                    _rig.addEventListener('touchstart', function(e) {
+                        e.preventDefault();
+                        _startDrag(e.touches[0].clientY);
+                        document.addEventListener('touchmove', _move, { passive: false });
+                        document.addEventListener('touchend',  _up);
+                    }, { passive: false });
+                })();
+
+                setTimeout(_showButtons, 300);
+            }
+
+            function _showButtons() {
+                _introDone = true;
+                var jugarBtn  = document.getElementById('mm-jugar-btn');
+                var bottomBar = document.getElementById('mm-bottom-bar');
+                if (!jugarBtn) return;
+                jugarBtn.style.pointerEvents = 'auto';
+
+                var privacyLink = document.getElementById('mm-privacy-link');
+                if (bottomBar) {
+                    bottomBar.style.display       = 'flex';
+                    bottomBar.style.pointerEvents = 'auto';
+                    bottomBar.style.transition    = 'opacity 0.5s ease';
+                    requestAnimationFrame(function () { bottomBar.style.opacity = '1'; });
+                }
+                if (privacyLink) {
+                    privacyLink.style.display     = 'block';
+                    privacyLink.style.transition  = 'opacity 0.5s ease';
+                    privacyLink.style.pointerEvents = 'auto';
+                    requestAnimationFrame(function () { privacyLink.style.opacity = '0.5'; });
+                }
+
+                // Register crate collider — full sign, no bottom trim.
+                setTimeout(function () {
+                    var btn  = document.getElementById('mm-jugar-btn');
+                    var cont = document.getElementById('intro-pan-container');
+                    if (!btn || !cont || !window.GameIntro || !window.GameIntro.setCrateRect) return;
+                    var br = btn.getBoundingClientRect();
+                    var cr = cont.getBoundingClientRect();
+                    window.GameIntro.setCrateRect({
+                        xMin: (br.left   - cr.left) / cr.width  * 100,
+                        xMax: (br.right  - cr.left) / cr.width  * 100,
+                        yMin: (cr.bottom - br.bottom           ) / cr.height * 100,
+                        yMax: (cr.bottom - br.top              ) / cr.height * 100,
+                    });
+                }, 300);
+            }
+
+            function _showIntroEnd() {
+                clearTimeout(window._introAnimTimer);
+                clearTimeout(window._introLogoTimer);
+                if (_panRafId) { cancelAnimationFrame(_panRafId); _panRafId = null; }
+                var container = document.getElementById('intro-pan-container');
+                if (container) container.style.transform = 'translateY(' + _panEndPx + 'px)';
+                var skipBtn = document.getElementById('mm-skip-btn');
+                if (skipBtn) skipBtn.style.display = 'none';
+                // silent=true: aquí se salta la intro entera al estado final de golpe
+                // (jugador nuevo de CrazyGames que entra directo a Vanilla) — no tiene
+                // sentido oír el sonido de una caída que nunca se ve.
+                _releaseLogo(true);
+            }
+
+            function _easeInOut(t) { return t < 0.5 ? 2*t*t : -1 + (4 - 2*t)*t; }
+
+            function _playIntroAnim() {
+                _applyScaling();
+                // Normalise rig width to 800 reference px so it lands consistently on all screens.
+                // The rig lives in mm-home (CSS space); convert: refPx * displayScale / z = CSS px.
+                var _rigEl = document.getElementById('mm-hang-rig');
+                if (_rigEl && _rigEl.parentElement !== document.getElementById('intro-pan-container')) {
+                    var _rigCSS = Math.round(800 * _displayScale / _zFactor());
+                    _rigEl.style.width = Math.max(275, _rigCSS) + 'px';
+                }
+                var container = document.getElementById('intro-pan-container');
+                if (container) {
+                    // Container is fixed at 1920×2229 reference px; scaling is via #intro-scale-root
+                    container.style.animation = 'none';
+                    container.style.transform = 'translateY(0)';
+                    var _ilc = window.INTRO_LAYOUT.get();
+                    var rawPanEnd = Math.round((_visRefH - _REF_H) * _ilc.panFrac);
+                    _panEndPx = rawPanEnd < 0 ? rawPanEnd : -Math.round(_REF_H * 0.3);
+                    _introPanEndPx = _panEndPx;
+                    if (window.GameIntro && window.GameIntro.setCurrentPan) window.GameIntro.setCurrentPan(_panEndPx);
+
+                    // Portrait: pre-compute where the logo will land so animals can be spawned
+                    // in correct zones from frame 1 (before the logo falls).
+                    // Uses layout params already available here; actual rect is refined on _onLogoLand().
+                    if (window.GAME_MODE === 'portrait' && window.GameIntro) {
+                        var _estVisTop  = -_panEndPx;
+                        var _estLogoBot = _estVisTop + _ilc.logoFrac * _visRefH + (_ilc.logoOffset || 0);
+                        var _estLogoTop = _estLogoBot - 350; // ~350 ref-px for full rig height
+                        var _estYMin    = Math.max(1,  (1 - _estLogoBot / _REF_H) * 100);
+                        var _estYMax    = Math.min(99, (1 - _estLogoTop / _REF_H) * 100);
+                        if (window.GameIntro.setLogoRect) {
+                            window.GameIntro.setLogoRect({ xMin: 29.2, xMax: 70.8, yMin: _estYMin, yMax: _estYMax });
+                        }
+                        if (window.GameIntro.enablePortraitTwoZones) window.GameIntro.enablePortraitTwoZones();
+                    }
+
+                    // Pre-position JUGAR crate at the correct final y so it's always visible
+                    var _visTop  = -_panEndPx;
+                    var _btnBarY = _visTop + _visRefH - (window.MENU_PLAY_BTN_BOTTOM != null ? window.MENU_PLAY_BTN_BOTTOM : 80);
+                    var _yMin    = Math.max(1, Math.round((1 - _btnBarY / _REF_H) * 100));
+                    var jBtn = document.getElementById('mm-jugar-btn');
+                    if (jBtn) {
+                        jBtn.style.bottom = _yMin + '%';
+                        jBtn.style.zIndex = String(1000 - _yMin * 10);
+                    }
+                    // Pre-register crate collider so animals don't walk through the button from frame 1.
+                    // Uses estimated size; _showButtons() refines with getBoundingClientRect after logo lands.
+                    if (window.GameIntro && window.GameIntro.setCrateRect) {
+                        var _crH = 6;   // ~6% of canvas height (~134 ref px, covers crate + legs)
+                        var _crX = 6;   // half-width in % of canvas width (~115 ref px each side)
+                        window.GameIntro.setCrateRect({
+                            xMin: 50 - _crX,
+                            xMax: 50 + _crX,
+                            yMin: _yMin,
+                            yMax: _yMin + _crH
+                        });
+                    }
+                }
+                // rAF pan: 1s delay, 4s ease-in-out
+                if (_panRafId) { cancelAnimationFrame(_panRafId); _panRafId = null; }
+                var PAN_DELAY    = 1000;
+                var PAN_DURATION = 4000;
+                var startTs      = null;
+                var panContainer = container;
+                var _panSoundPlayed = false;
+                function _panTick(ts) {
+                    if (!startTs) startTs = ts;
+                    var elapsed = ts - startTs - PAN_DELAY;
+                    if (elapsed < 0) { _panRafId = requestAnimationFrame(_panTick); return; }
+                    // Suena justo cuando el paneo de cámara empieza a moverse de verdad
+                    // (tras el delay inicial), no antes.
+                    if (!_panSoundPlayed) {
+                        _panSoundPlayed = true;
+                        if (window.GameAudio) window.GameAudio.playRestartSound(window.GameAudio.sfxLogoDown, 0.6);
+                    }
+                    var t = Math.min(elapsed / PAN_DURATION, 1);
+                    panContainer.style.transform = 'translateY(' + Math.round(_panEndPx * _easeInOut(t)) + 'px)';
+                    // Release so the fall finishes right as the pan settles (release 260ms + fall 520ms
+                    // = 780ms after this point). If the logo landed before the pan finished, it would
+                    // land in "mid-pan" space while the shadow sits at "final-pan" → a ~15px snap on land.
+                    if (!_logoReleased && elapsed >= PAN_DURATION - 750) _releaseLogo();
+                    if (t < 1) { _panRafId = requestAnimationFrame(_panTick); }
+                    else { _panRafId = null; }
+                }
+                if (panContainer) _panRafId = requestAnimationFrame(_panTick);
+
+                var home      = document.getElementById('mm-home');
+                var jugarBtn  = document.getElementById('mm-jugar-btn');
+                var bottomBar = document.getElementById('mm-bottom-bar');
+                var skipBtn   = document.getElementById('mm-skip-btn');
+                if (!home) return;
+                // mm-home non-interactive until logo lands
+                home.style.pointerEvents = 'none';
+                if (jugarBtn)  { jugarBtn.style.display='block'; jugarBtn.style.opacity='1'; jugarBtn.style.pointerEvents = 'none'; jugarBtn.style.transition = ''; }
+                if (window.GameIntro && window.GameIntro.setCrateRect) window.GameIntro.setCrateRect(null);
+                if (bottomBar) { bottomBar.style.opacity = '0'; bottomBar.style.display = 'none'; bottomBar.style.pointerEvents = 'none'; bottomBar.style.transition = ''; }
+                if (skipBtn)   skipBtn.style.display = 'block';
+                clearTimeout(window._introAnimTimer);
+                clearTimeout(window._introLogoTimer);
+                _logoReleased = false;
+                if (_fallAnim) { _fallAnim.cancel(); _fallAnim = null; }
+                _modeSceneOpen = false;
+                // Place the crates row in the prado hidden zone below the initial viewport
+                (function() {
+                    var _h2  = _REF_H;
+                    var _vh2 = _visRefH;
+                    var _cp, _cz;
+                    if (window.GAME_MODE === 'portrait' && window.MENU_PORTRAIT_CRATES_Y != null) {
+                        // Portrait override: target Y from viewport top → convert to bottom% in container
+                        var _targetVpTop = window.MENU_PORTRAIT_CRATES_Y;
+                        var _contTop     = _panEndPx; // container translateY after pan
+                        var _cpRaw       = (_h2 - (_targetVpTop - _contTop)) / _h2 * 100;
+                        _cp = Math.max(1, Math.round(_cpRaw));
+                    } else {
+                        var _hid = Math.max(0, (_panEndPx + _h2) - _vh2);
+                        var _ext = Math.min(_hid, Math.round(Math.min(_hid, Math.max(_ilc.modePanMin, _hid * _ilc.modePanFrac))) + _ilc.modePanExtra);
+                        var _tp  = _panEndPx - _ext;
+                        var _cy  = (_vh2 - _ilc.modeCratesBotPx) - _tp;
+                        _cp = Math.max(1, Math.round((_h2 - _cy) / _h2 * 100));
+                    }
+                    _cz = String(Math.max(1, 1000 - _cp * 10));
+                    var _row = document.getElementById('mm-prado-crates-row');
+                    if (_row) {
+                        _row.style.bottom  = _cp + '%';
+                        _row.style.zIndex  = _cz;
+                        _row.style.display = 'flex';
+                    }
+                })();
+                // Return rig to #mm-home if it was moved into the pan container.
+                // OJO: no vaciar los estilos a '' — esto es lo que sea que puso
+                // _onLogoLand() (position:absolute con left/top ABSOLUTOS relativos
+                // al pan container), no lo que trae el HTML de origen. Vaciarlos con
+                // '' no "restaura el markup", cae en los valores por defecto del
+                // navegador (position:static, width:auto) y el logo se queda pequeño
+                // y en una esquina. Hay que poner explícitamente los mismos valores
+                // que ya tiene inline en el HTML (línea ~628: position:absolute;
+                // top:0; left:50%; transform:translateX(-50%);
+                // width:clamp(275px,68vw,800px)).
+                var _rig  = document.getElementById('mm-hang-rig');
+                var _home = document.getElementById('mm-home');
+                if (_rig && _home && _rig.parentElement !== _home) {
+                    _rig.style.position  = 'absolute';
+                    _rig.style.left      = '50%';
+                    _rig.style.top       = '0';
+                    _rig.style.width     = 'clamp(275px,68vw,800px)';
+                    _rig.style.transform = 'translateX(-50%)';
+                    _rig.style.zIndex    = '';
+                    _home.insertBefore(_rig, _home.firstChild);
+                }
+            }
+
+            function _fadeToBlack(cb) {
+                var tr = document.getElementById('scene-transition');
+                if (!tr) { cb(); return; }
+                tr.style.display    = 'block';
+                tr.style.transition = 'opacity 0.35s ease';
+                tr.style.opacity    = '0';
+                tr.getBoundingClientRect();
+                tr.style.opacity = '1';
+                tr.addEventListener('transitionend', function handler() {
+                    tr.removeEventListener('transitionend', handler);
+                    cb();
+                });
+            }
+
+            function _resumeGame() {
+                var mmo = document.getElementById('main-menu-overlay');
+                var tr  = document.getElementById('scene-transition');
+                _fadeToBlack(function () {
+                    if (mmo) mmo.style.display = 'none';
+                    document.body.classList.add('in-game');
+                    window._inGame = true;
+                    window._cgMarkGameplayStarted?.();
+                    window.gamePaused = false;
+                    if (window.GameEngine && window.GameEngine.resetTime) window.GameEngine.resetTime();
+                    if (tr) {
+                        tr.style.opacity = '0';
+                        tr.addEventListener('transitionend', function fadeOut() {
+                            tr.removeEventListener('transitionend', fadeOut);
+                            tr.style.display = 'none';
+                        });
+                    }
+                });
+            }
+
+            function _loadChallengeData() {
+                // Aviso "hay otros modos de juego" (CrazyGames): _loadChallengeData()
+                // se llama SIEMPRE que se inicializa el menú (_initMainMenu), incluida
+                // la carga de un jugador nuevo que salta directo a Vanilla — pero en
+                // ese caso el overlay se queda en display:none y nunca se ve. Solo
+                // cuenta como "visto" si el overlay está realmente en pantalla.
+                if (window.GAME_MARKET === 'crazygames') {
+                    var _mmoNow = document.getElementById('main-menu-overlay');
+                    if (_mmoNow && _mmoNow.style.display === 'flex') {
+                        window._cgMarkOtherModesSeen?.();
+                    }
+                }
+                if (localStorage.getItem('chickenIdleBeatenVanilla') === 'true' || localStorage.getItem('chickenIdleBeaten') === 'true') {
+                    var el = document.getElementById('check-chal-1');
+                    if (el) el.style.display = 'block';
+                }
+                if (localStorage.getItem('chickenIdleBeatenSpeedrun') === 'true') {
+                    var el = document.getElementById('check-chal-2');
+                    if (el) el.style.display = 'block';
+                }
+                if (localStorage.getItem('chickenIdleBeatenAdam') === 'true') {
+                    var el = document.getElementById('check-chal-3');
+                    if (el) el.style.display = 'block';
+                }
+                if (localStorage.getItem('chickenIdleBeatenManual') === 'true') {
+                    var el = document.getElementById('check-chal-4');
+                    if (el) el.style.display = 'block';
+                }
+                // Completed badges on prado crates
+                var _completedLabel = window.t ? window.t('completed') : 'Completed';
+                var _beatenMap = {
+                    vanilla:  localStorage.getItem('chickenIdleBeatenVanilla') === 'true' || localStorage.getItem('chickenIdleBeaten') === 'true',
+                    speedrun: localStorage.getItem('chickenIdleBeatenSpeedrun') === 'true',
+                    adam:     localStorage.getItem('chickenIdleBeatenAdam') === 'true',
+                    manual:   localStorage.getItem('chickenIdleBeatenManual') === 'true',
+                    endless:  false
+                };
+                document.querySelectorAll('.prado-completed-badge[data-challenge-badge]').forEach(function (badge) {
+                    var ch = badge.getAttribute('data-challenge-badge');
+                    if (_beatenMap[ch]) {
+                        badge.textContent = _completedLabel;
+                        badge.style.display = 'inline-block';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                });
+                // Auto-scale description text to fit its container
+                window._scalePradoDesc = function() {
+                    document.querySelectorAll('.prado-desc').forEach(function(el) {
+                        el.style.fontSize = '';
+                        var fs = parseFloat(getComputedStyle(el).fontSize);
+                        var minFs = 5;
+                        var safety = 80;
+                        if (!el.offsetHeight) return;
+                        while (el.scrollHeight > el.offsetHeight && fs > minFs && safety-- > 0) {
+                            fs -= 0.5;
+                            el.style.fontSize = fs + 'px';
+                        }
+                    });
+                };
+                requestAnimationFrame(function() {
+                    requestAnimationFrame(function() {
+                        window._scalePradoDesc();
+                    });
+                });
+                // Ranking position badges on mode cards
+                (function () {
+                    var _pin = localStorage.getItem('chickenIdleSpeedrunPin');
+                    var _api = '';
+                    var _show = function (id, pos, color) {
+                        var el = document.getElementById(id);
+                        if (el && pos > 0) { el.textContent = '# ' + pos; el.style.color = color || ''; el.style.display = 'inline-block'; }
+                    };
+                    console.log('[RankBadge] pin:', _pin);
+                    if (_api && _pin) {
+                        fetch(_api + '/get_ranking_2.php?pin=' + encodeURIComponent(_pin))
+                            .then(function (r) { return r.json(); })
+                            .then(function (d) {
+                                console.log('[RankBadge] speedrun response:', JSON.stringify(d).slice(0,200));
+                                if (d.ok && d.selfRun && d.selfRun.pos > 0) _show('prado-rank-speedrun', d.selfRun.pos, '#f1c40f');
+                            })
+                            .catch(function (e) { console.warn('[RankBadge] speedrun error:', e); });
+                        fetch(_api + '/get_endless_ranking.php?pin=' + encodeURIComponent(_pin))
+                            .then(function (r) { return r.json(); })
+                            .then(function (d) {
+                                console.log('[RankBadge] endless response:', JSON.stringify(d).slice(0,200));
+                                var _ep = d.player || (d.top10 || []).find(function(r){ return r.is_me; });
+                                if (d.ok && _ep && _ep.rank_pos > 0) _show('prado-rank-endless', _ep.rank_pos, '#ffe234');
+                                else console.warn('[RankBadge] endless no show — ok:', d.ok, 'player:', d.player, 'inTop:', !!_ep);
+                            })
+                            .catch(function (e) { console.warn('[RankBadge] endless error:', e); });
+                    } else {
+                        console.warn('[RankBadge] no pin in localStorage (chickenIdleSpeedrunPin)');
+                    }
+                })();
+
+                var fmtPB = function (s) {
+                    var h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sc = Math.floor(s % 60);
+                    return (h > 0 ? h + ':' : '') + String(m).padStart(2, '0') + ':' + String(sc).padStart(2, '0');
+                };
+                [{ key: 'pb_vanilla', id: 'pb-vanilla' }, { key: 'pb_speedrun', id: 'pb-speedrun' },
+                 { key: 'pb_adam', id: 'pb-adam' }, { key: 'pb_manual', id: 'pb-manual' }].forEach(function (pb) {
+                    var val = localStorage.getItem(pb.key);
+                    if (val) {
+                        var el = document.getElementById(pb.id);
+                        if (el) { el.style.display = 'block'; el.innerText = 'Best: ' + fmtPB(parseFloat(val)); }
+                    }
+                });
+            }
+
+            // Detect which challenge mode is currently active.
+            // Prefers window._activeGameChallenge (set by script.js after each loadState)
+            // so it always reflects the real in-memory game mode, not just localStorage flags.
+            function _getCurrentMode() {
+                if (window._activeGameChallenge) return window._activeGameChallenge;
+                if (window.GameSave && window.GameSave.loadRaw) {
+                    if (window.GameSave.loadRaw('chickenIdleSpeedrun') === 'true') return 'speedrun';
+                    var slot = window.GameSave.loadRaw('chickenIdleActiveSlot');
+                    if (slot === 'endless') return 'endless';
+                    var ch = window.GameSave.loadRaw('activeChallenge');
+                    if (ch === 'adam') return 'adam';
+                    if (ch === 'manual') return 'manual';
+                }
+                return 'vanilla';
+            }
+
+            // Map button ID → challenge mode
+            var _BTN_MODE = {
+                'normal-mode-btn': 'vanilla',
+                'adam-mode-btn': 'adam',
+                'fourth-mode-btn': 'manual',
+                'endless-mode-btn': 'endless',
+                'speedrun-start-btn': 'speedrun'
+            };
+
+            // Intercept challenge card clicks:
+            //  - Same mode as current: resume without reload
+            //  - Different mode: set sessionStorage so next load skips main menu
+            function _wireChallengeButtons() {
+                Object.keys(_BTN_MODE).forEach(function (id) {
+                    var btn = document.getElementById(id);
+                    if (!btn) return;
+                    btn.addEventListener('click', function (e) {
+                        if (window._inGame) return;
+                        var curMode = _getCurrentMode();
+                        var targetMode = _BTN_MODE[id];
+                        if (targetMode === curMode) {
+                            // Same mode: just resume
+                            e.stopImmediatePropagation();
+                            _resumeGame();
+                        } else {
+                            // Different mode: fade to black, then trigger switch
+                            e.stopImmediatePropagation();
+                            _fadeToBlack(function () {
+                                if (window._switchToChallenge) {
+                                    window._switchToChallenge(targetMode);
+                                } else {
+                                    try { sessionStorage.setItem('skipMainMenu', '1'); } catch (_) {}
+                                    window.location.reload();
+                                }
+                            });
+                        }
+                    }, true); // capture phase — fires before script.js bubble listener
+                });
+            }
+
+            function _setMenuBlur(on) {
+                var w = document.getElementById('intro-pan-wrapper');
+                if (!w) return;
+                if (on) w.classList.add('is-blurred');
+                else    w.classList.remove('is-blurred');
+            }
+
+            var _modeSceneOpen = false;
+
+            var _PRADO_IDS = ['mm-prado-normal','mm-prado-adam','mm-prado-fourth','mm-prado-endless','mm-prado-speedrun'];
+
+            // True once the logo has landed AND been re-parented into #intro-pan-container.
+            // Until then the rig still lives in #mm-home (camera/viewport space), so panning the
+            // camera down to the modes zone would drag the logo along with the view instead of
+            // leaving it behind in the world. Exposed so portrait.js can gate its own JUGAR handler.
+            window._mmLogoSettled = function () {
+                var rig  = document.getElementById('mm-hang-rig');
+                var cont = document.getElementById('intro-pan-container');
+                return !!(rig && cont && cont.contains(rig));
+            };
+
+            window._mmOpenModeScene = function(force) { if (force) _modeSceneOpen = false; if (!_modeSceneOpen) _openModeScene(); };
+            function _openModeScene() {
+                if (_modeSceneOpen) return;
+                // Chokepoint guard: never open the modes scene while the logo is still falling —
+                // the rig is camera-anchored until _onLogoLand() moves it into the pan container.
+                if (!_introDone || !window._mmLogoSettled()) return;
+                _modeSceneOpen = true;
+                _barHide();
+                var cont = document.getElementById('intro-pan-container');
+                var h    = _REF_H;
+                var vh   = _visRefH;
+                var _ilcm = window.INTRO_LAYOUT.get();
+
+                // Pan camera DOWN to reveal the hidden prado zone where mode crates live
+                var hiddenBelow = Math.max(0, (_introPanEndPx + h) - vh);
+                var extraPx     = Math.min(hiddenBelow, Math.round(Math.min(hiddenBelow, Math.max(_ilcm.modePanMin, hiddenBelow * _ilcm.modePanFrac))) + _ilcm.modePanExtra);
+                var toPan       = _introPanEndPx - extraPx;
+
+                if (cont) {
+                    var panAnim = cont.animate(
+                        [{ transform:'translateY('+_introPanEndPx+'px)' }, { transform:'translateY('+toPan+'px)' }],
+                        { duration:600, easing:'cubic-bezier(0.4,0,0.2,1)', fill:'forwards' }
+                    );
+                    panAnim.onfinish = function() {
+                        panAnim.cancel();
+                        cont.style.transform = 'translateY('+toPan+'px)';
+                        _panEndPx = toPan;
+                        // Expand walk zone; floor = just above the crate row so animals stay clear of it
+                        if (window.GameIntro && window.GameIntro.setCurrentPan) window.GameIntro.setCurrentPan(toPan);
+                        if (window.GameIntro && window.GameIntro.refreshZone) {
+                            var _mRow = document.getElementById('mm-prado-crates-row');
+                            var _mFloor = _mRow ? (parseFloat(_mRow.style.bottom) || 0) + 4 : 32;
+                            window.GameIntro.refreshZone(_mFloor);
+                        }
+                    };
+                }
+            }
+
+            function _closeModeScene() {
+                if (!_modeSceneOpen) return;
+                _modeSceneOpen = false;
+                var cont = document.getElementById('intro-pan-container');
+
+                // Pan camera back up to intro position
+                if (cont) {
+                    var panBack = cont.animate(
+                        [{ transform:'translateY('+_panEndPx+'px)' }, { transform:'translateY('+_introPanEndPx+'px)' }],
+                        { duration:420, easing:'cubic-bezier(0.4,0,0.2,1)', fill:'forwards' }
+                    );
+                    panBack.onfinish = function() {
+                        panBack.cancel();
+                        cont.style.transform = 'translateY('+_introPanEndPx+'px)';
+                        _panEndPx = _introPanEndPx;
+                        // Contract walk zone and chase any animals back up
+                        if (window.GameIntro && window.GameIntro.setCurrentPan) window.GameIntro.setCurrentPan(_introPanEndPx);
+                        if (window.GameIntro && window.GameIntro.refreshZone)    window.GameIntro.refreshZone();
+                        _barShow();
+                    };
+                }
+            }
+
+            // Single source of truth for the logo shadow. Anchors it to the SIGN (#mm-logo)
+            // with a FIXED offset, computed live from the sign's current geometry. Both the rig
+            // and the shadow live in the container (reference px), so no scale conversion is needed.
+            // Previously the shadow stored an independent percentage that drifted vs the rig,
+            // making ΔY(shadow − sign feet) change with resolution (−8 here, +15 there).
+            // Now ΔY is always −shadowHeight, at every resolution.
+            function _anchorShadowToSign() {
+                var rig    = document.getElementById('mm-hang-rig');
+                var logo   = document.getElementById('mm-logo');
+                var shadow = document.getElementById('mm-logo-shadow');
+                var cont   = document.getElementById('intro-pan-container');
+                if (!rig || !logo || !shadow || !cont) return false;
+                // Only valid once both rig and shadow have been moved into the container.
+                if (rig.parentElement !== cont || shadow.parentElement !== cont) return false;
+                var rigTop     = parseInt(rig.style.top) || 0;
+                // Sign geometry within the rig (ropes are position:absolute, so mm-logo's
+                // offsetTop reflects its margin-top headroom; offsetHeight is the sign only).
+                var signBottom = rigTop + logo.offsetTop + logo.offsetHeight; // ref px
+                var signWidth  = logo.offsetWidth;                            // ref px
+                var shH        = parseInt(shadow.style.height) || 8;
+                var shTop      = signBottom - shH; // shadow bottom rests on the sign's feet
+                shadow.style.position  = 'absolute';
+                shadow.style.left      = Math.round(_REF_W / 2) + 'px';
+                shadow.style.top       = shTop + 'px';
+                shadow.style.bottom    = 'auto';
+                shadow.style.width     = Math.round(signWidth * 0.97) + 'px';
+                _shadowTopPct = shTop / _REF_H * 100;
+                return true;
+            }
+
+            function _reflow() {
+                if (!_introDone) return;
+                _applyScaling();
+                var cont = document.getElementById('intro-pan-container');
+                if (!cont) return;
+
+                // Container is fixed at 1920×2229; scaling handled by #intro-scale-root
+                var w = _REF_W;
+                var h = _REF_H;
+
+                var _ilcr = window.INTRO_LAYOUT.get();
+                var rawPanEnd = Math.round((_visRefH - _REF_H) * _ilcr.panFrac);
+                _introPanEndPx = rawPanEnd < 0 ? rawPanEnd : -Math.round(_REF_H * 0.3);
+
+                if (_modeSceneOpen) {
+                    var hiddenBelow = Math.max(0, (_introPanEndPx + _REF_H) - _visRefH);
+                    var extraPx = Math.round(Math.min(hiddenBelow, Math.max(_ilcr.modePanMin, hiddenBelow * _ilcr.modePanFrac))) + _ilcr.modePanExtra;
+                    _panEndPx = _introPanEndPx - extraPx;
+                } else {
+                    _panEndPx = _introPanEndPx;
+                }
+                cont.style.transform = 'translateY(' + _panEndPx + 'px)';
+
+                // JUGAR button — position derived from intro pan (stays visible at bottom of viewport)
+                var _visTop  = -_introPanEndPx;
+                var _btnBarY = _visTop + _visRefH - (window.MENU_PLAY_BTN_BOTTOM != null ? window.MENU_PLAY_BTN_BOTTOM : 80);
+                var _yMin    = Math.max(1, Math.round((1 - _btnBarY / _REF_H) * 100));
+                var jBtn = document.getElementById('mm-jugar-btn');
+                if (jBtn) {
+                    jBtn.style.bottom = _yMin + '%';
+                    jBtn.style.zIndex = String(1000 - _yMin * 10);
+                }
+
+                // Mode crates row
+                var _row = document.getElementById('mm-prado-crates-row');
+                if (_row && _row.style.display === 'flex') {
+                    var _hid = Math.max(0, (_introPanEndPx + _REF_H) - _visRefH);
+                    var _ext = Math.min(_hid, Math.round(Math.min(_hid, Math.max(_ilcr.modePanMin, _hid * _ilcr.modePanFrac))) + _ilcr.modePanExtra);
+                    var _tp  = _introPanEndPx - _ext;
+                    var _cy  = (_visRefH - _ilcr.modeCratesBotPx) - _tp;
+                    var _cp  = Math.max(1, Math.round((_REF_H - _cy) / _REF_H * 100));
+                    _row.style.bottom = _cp + '%';
+                    _row.style.zIndex = String(Math.max(1, 1000 - _cp * 10));
+                }
+
+                // Rig — stored as ratios of container, convert back to reference px
+                var rig = document.getElementById('mm-hang-rig');
+                if (rig && _rigTopPct !== null && rig.parentElement === cont) {
+                    var rigW = Math.round(_rigWidthFrac * w);
+                    rig.style.top   = Math.round(_rigTopPct * h / 100) + 'px';
+                    rig.style.left  = Math.round((w - rigW) / 2) + 'px';
+                    rig.style.width = rigW + 'px';
+                    rig.style.zIndex = _rigZIndex;
+
+                    // Push JUGAR button below logo on very short viewports (overlap guard)
+                    if (jBtn) {
+                        var _rigBotR = Math.round(_rigTopPct * h / 100) + rig.offsetHeight;
+                        var _jBotR   = Math.round((1 - parseFloat(jBtn.style.bottom) / 100) * h);
+                        var _jTopR   = _jBotR - jBtn.offsetHeight;
+                        if (_jTopR < _rigBotR + 12) {
+                            var _newBotR  = _rigBotR + 12 + jBtn.offsetHeight;
+                            var _newYMinR = Math.max(1, Math.round((1 - _newBotR / h) * 100));
+                            jBtn.style.bottom = _newYMinR + '%';
+                            jBtn.style.zIndex = String(Math.max(1, 1000 - _newYMinR * 10));
+                        }
+                    }
+                }
+
+                // Logo shadow — re-anchor to the sign (fixed offset, live geometry).
+                // Falls back to the stored percentage only if the rig isn't in the container yet.
+                var shadow = document.getElementById('mm-logo-shadow');
+                if (!_anchorShadowToSign() && shadow && _shadowTopPct !== null && shadow.parentElement === cont) {
+                    shadow.style.top  = Math.round(_shadowTopPct * h / 100) + 'px';
+                    shadow.style.left = Math.round(w / 2) + 'px';
+                    if (_rigWidthFrac !== null) {
+                        shadow.style.width = Math.round(_rigWidthFrac * w * 0.97) + 'px';
+                    }
+                }
+
+                // Walk zone
+                if (window.GameIntro && window.GameIntro.setCurrentPan) window.GameIntro.setCurrentPan(_panEndPx);
+                if (window.GameIntro && window.GameIntro.refreshZone) {
+                    if (_modeSceneOpen && _row) {
+                        var _mFloor = (parseFloat(_row.style.bottom) || 0) + 4;
+                        window.GameIntro.refreshZone(_mFloor);
+                    } else {
+                        window.GameIntro.refreshZone();
+                    }
+                }
+            }
+
+            (function() {
+                var _reflowTimer = null;
+                window.addEventListener('resize', function() {
+                    // Recargar si estamos en la intro/menú principal; NO recargar si ya estamos en partida.
+                    if (!document.body.classList.contains('in-game')) {
+                        location.reload();
+                        return;
+                    }
+                    clearTimeout(_reflowTimer);
+                    _reflowTimer = setTimeout(_reflow, 150);
+                });
+            })();
+
+            function _initMainMenu() {
+                var mmo = document.getElementById('main-menu-overlay');
+                if (!mmo) return;
+
+                _loadChallengeData();
+                _wireChallengeButtons();
+
+                // Prado play buttons → trigger corresponding hidden button (stopPropagation so parent div doesn't double-fire)
+                document.getElementById('mm-prado-crates-row').addEventListener('click', function(e) {
+                    var pb = e.target.closest('.prado-play-btn');
+                    if (pb) {
+                        e.stopPropagation();
+                        var crate = pb.closest('.mm-prado-mode-btn');
+                        var target = crate && document.getElementById(crate.getAttribute('data-target'));
+                        if (target) target.click();
+                        return;
+                    }
+                    var rb = e.target.closest('.prado-restart-btn');
+                    if (rb) {
+                        e.stopPropagation();
+                        var ch = rb.getAttribute('data-challenge');
+                        if (window._showWipeConfirm) window._showWipeConfirm(ch);
+                        return;
+                    }
+                });
+
+                // JUGAR → toggle prado mode select (stays visible, click again to close)
+                (function() {
+                    var jb = document.getElementById('mm-jugar-btn');
+                    if (!jb) return;
+                    jb.addEventListener('click', function() {
+                        if (!_introDone) return;
+                        if (_modeSceneOpen) { _closeModeScene(); } else { _openModeScene(); }
+                    });
+                    jb.addEventListener('mouseenter', function() {
+                        var inner = jb.querySelector('div');
+                        if (inner) { inner.style.transition = 'transform 0.18s ease'; inner.style.transform = 'translateY(-10px)'; }
+                    });
+                    jb.addEventListener('mouseleave', function() {
+                        var inner = jb.querySelector('div');
+                        if (inner) { inner.style.transition = 'transform 0.18s ease'; inner.style.transform = ''; }
+                    });
+                })();
+
+                // VOLVER ← in prado mode select
+                document.getElementById('mm-prado-volver') && document.getElementById('mm-prado-volver').addEventListener('click', _closeModeScene);
+
+                // Prado mode crates → trigger corresponding hidden buttons + hover effect
+                document.querySelectorAll('.mm-prado-mode-btn').forEach(function(btn) {
+                    btn.addEventListener('click', function(e) {
+                        // Let the row listener handle clicks that originate inside .prado-play-btn
+                        // or .prado-restart-btn to avoid double-firing _switchToChallenge
+                        if (e.target.closest('.prado-play-btn') || e.target.closest('.prado-restart-btn')) return;
+                        var target = document.getElementById(btn.getAttribute('data-target'));
+                        if (target) target.click();
+                    });
+                    btn.addEventListener('mouseenter', function() {
+                        var inner = btn.querySelector('div');
+                        if (inner) { inner.style.transition = 'transform 0.18s ease'; inner.style.transform = 'translateY(-10px)'; }
+                    });
+                    btn.addEventListener('mouseleave', function() {
+                        var inner = btn.querySelector('div');
+                        if (inner) { inner.style.transition = 'transform 0.18s ease'; inner.style.transform = ''; }
+                    });
+                });
+
+
+                // AJUSTES (home screen)
+                document.getElementById('mm-ajustes-btn') && document.getElementById('mm-ajustes-btn').addEventListener('click', function () {
+                    var home = document.getElementById('mm-home');
+                    if (home) home.style.display = 'none';
+                    var po = document.getElementById('pause-overlay');
+                    if (po) { po.style.background = 'transparent'; po.style.display = 'flex'; }
+                    _showPausePanel('pause-settings');
+                    _pauseBackTarget = 'main';
+                    _setMenuBlur(true);
+                    _barHide();
+                    _slideIn('pause-panel');
+                });
+
+                // SALIR (home screen)
+                document.getElementById('mm-skip-btn') && document.getElementById('mm-skip-btn').addEventListener('click', function () {
+                    if (window.GameAudio) window.GameAudio.stopSound(window.GameAudio.sfxLogoDown);
+                    _showIntroEnd();
+                });
+
+                document.getElementById('mm-salir-btn') && document.getElementById('mm-salir-btn').addEventListener('click', function () {
+                    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+                        window.Capacitor.Plugins.App.exitApp();
+                    } else {
+                        window.close();
+                    }
+                });
+
+                document.getElementById('main-ranking-btn') && document.getElementById('main-ranking-btn').addEventListener('click', function () {
+                    var rb = document.getElementById('ranking-btn');
+                    if (rb) rb.click();
+                    _barHide();
+                    _slideIn('ranking-panel');
+                });
+
+                document.getElementById('main-logros-btn') && document.getElementById('main-logros-btn').addEventListener('click', function () {
+                    var po = document.getElementById('pause-overlay');
+                    if (po) { po.style.background = 'transparent'; po.style.display = 'flex'; }
+                    _showPausePanel('pause-logros');
+                    _pauseBackTarget = 'main';
+                    _setMenuBlur(true);
+                    _barHide();
+                    _slideIn('pause-panel');
+                });
+
+                document.getElementById('main-ranking-btn') && document.getElementById('main-ranking-btn').addEventListener('click', function () {
+                    _setMenuBlur(true);
+                    var rb = document.getElementById('ranking-btn');
+                    if (rb) rb.click();
+                });
+
+                // When ranking-overlay closes, keep game paused if main menu is still open
+                var rClose = document.getElementById('ranking-close');
+                if (rClose) {
+                    rClose.addEventListener('click', function () {
+                        _slideOut('ranking-panel');
+                        var m = document.getElementById('main-menu-overlay');
+                        if (m && m.style.display !== 'none') _barShow();
+                        setTimeout(function () {
+                            if (m && m.style.display !== 'none') {
+                                window.gamePaused = true;
+                                _setMenuBlur(false);
+                            }
+                        }, 0);
+                    });
+                }
+            }
+
+            function _initPauseMenu() {
+                document.getElementById('pause-to-settings') && document.getElementById('pause-to-settings').addEventListener('click', function () {
+                    _showPausePanel('pause-settings');
+                    _pauseBackTarget = 'pause';
+                });
+                document.getElementById('pause-to-logros') && document.getElementById('pause-to-logros').addEventListener('click', function () {
+                    _showPausePanel('pause-logros');
+                    _pauseBackTarget = 'pause';
+                });
+                document.getElementById('pause-salir-btn') && document.getElementById('pause-salir-btn').addEventListener('click', function () {
+                    _fadeToBlack(function () {
+                        document.body.classList.remove('in-game');
+                        window._inGame = false;
+                        var po = document.getElementById('pause-overlay');
+                        if (po) po.style.display = 'none';
+                        var mmo = document.getElementById('main-menu-overlay');
+                        if (mmo) {
+                            mmo.style.display = 'flex';
+                            _loadChallengeData();
+                        }
+                        var home = document.getElementById('mm-home');
+                        if (home) home.style.display = 'flex';
+                        // Pedido explícito: si el jugador entró directo a Vanilla sin ver la
+                        // intro (auto-vanilla de CrazyGames, ver window._firstTimeAutoVanilla
+                        // en index.html), que la vea AHORA al volver por "Salir" — pero solo
+                        // esta vez. Se apaga el flag justo después: la próxima vez que pulse
+                        // "Salir" en la misma sesión, comportamiento normal (salta al final,
+                        // sin repetir la intro en cada ida y vuelta al menú).
+                        if (window._firstTimeAutoVanilla) {
+                            window._firstTimeAutoVanilla = false;
+                            _playIntroAnim();
+                        } else {
+                            _showIntroEnd();
+                        }
+                        _showPausePanel('pause-main');
+                        _setMenuBlur(false);
+                        if (window.GameIntro) window.GameIntro.start();
+                        window.gamePaused = true;
+                        var tr = document.getElementById('scene-transition');
+                        if (tr) {
+                            tr.style.opacity = '0';
+                            tr.addEventListener('transitionend', function fadeOut() {
+                                tr.removeEventListener('transitionend', fadeOut);
+                                tr.style.display = 'none';
+                            });
+                        }
+                    });
+                });
+                document.getElementById('rs-reto-btn') && document.getElementById('rs-reto-btn').addEventListener('click', function () {
+                    _fadeToBlack(function () {
+                        // Reactiva los botones que la cinemática deshabilitó (_disableButtons).
+                        // Sin esto, al volver al menú por "jugar otro reto" los botones de
+                        // opciones/idioma/cerrar quedaban en disabled: reset() llama a
+                        // _enableButtons() y además deja el core en estado limpio (_active=false,
+                        // _phase=0), no colgado en el estado del retiro anterior.
+                        if (window.CinematicCore) window.CinematicCore.reset();
+                        var rso = document.getElementById('retire-stats-overlay');
+                        if (rso) rso.style.display = 'none';
+                        var rcr = document.getElementById('retire-cine-root');
+                        if (rcr) rcr.style.display = 'none';
+                        window._retireCineCtx = null;
+                        document.body.classList.remove('is-cinematic');
+                        document.body.classList.remove('retire-stats-open');
+                        document.body.classList.remove('in-game');
+                        var po = document.getElementById('pause-overlay');
+                        if (po) po.style.display = 'none';
+                        var mmo = document.getElementById('main-menu-overlay');
+                        if (mmo) { mmo.style.display = 'flex'; _loadChallengeData(); }
+                        var home = document.getElementById('mm-home');
+                        if (home) home.style.display = 'flex';
+                        _showIntroEnd();
+                        _setMenuBlur(false);
+                        if (window.GameIntro) window.GameIntro.start();
+                        window.gamePaused = true;
+                        var tr = document.getElementById('scene-transition');
+                        if (tr) {
+                            tr.style.opacity = '0';
+                            tr.addEventListener('transitionend', function fadeOut() {
+                                tr.removeEventListener('transitionend', fadeOut);
+                                tr.style.display = 'none';
+                            });
+                        }
+                        window._inGame = false;
+                    });
+                });
+                document.getElementById('pause-settings-back') && document.getElementById('pause-settings-back').addEventListener('click', function () {
+                    if (_pauseBackTarget === 'main') {
+                        _slideOut('pause-panel', function () {
+                            _showPausePanel('pause-main');
+                            var po = document.getElementById('pause-overlay');
+                            if (po) { po.style.background = ''; po.style.display = 'none'; }
+                            var home = document.getElementById('mm-home');
+                            if (home) home.style.display = 'flex';
+                            _setMenuBlur(false);
+                            _barShow();
+                        });
+                    } else {
+                        _showPausePanel('pause-main');
+                    }
+                });
+                document.getElementById('pause-logros-back') && document.getElementById('pause-logros-back').addEventListener('click', function () {
+                    if (_pauseBackTarget === 'main') {
+                        _slideOut('pause-panel', function () {
+                            _showPausePanel('pause-main');
+                            var po = document.getElementById('pause-overlay');
+                            if (po) { po.style.background = ''; po.style.display = 'none'; }
+                            _setMenuBlur(false);
+                            _barShow();
+                        });
+                    } else {
+                        _showPausePanel('pause-main');
+                    }
+                });
+                document.getElementById('pause-mute-proxy') && document.getElementById('pause-mute-proxy').addEventListener('click', function () {
+                    var realBtn = document.getElementById('mute-btn');
+                    if (realBtn) realBtn.click();
+                });
+                document.getElementById('remove-ads-btn') && document.getElementById('remove-ads-btn').addEventListener('click', function () {
+                    window.GameIAP.purchase();
+                });
+            }
+
+            // On reload after a challenge switch: skip main menu and go straight to game
+            var _skipMenu = false;
+            try {
+                if (sessionStorage.getItem('skipMainMenu')) {
+                    sessionStorage.removeItem('skipMainMenu');
+                    _skipMenu = true;
+                }
+            } catch (_) {}
+            if (window.DEBUG) _skipMenu = true;
+
+            // Pedido de onboarding (feedback de CrazyGames): un jugador de
+            // PRIMERA SESIÓN — sin ningún save de ningún modo todavía — entra
+            // directo a jugar Vanilla, sin pasar por el menú de selección de
+            // reto (eso es fricción para alguien que ni ha probado el juego).
+            // Un jugador que vuelve (tiene save de algo, sea el modo que sea)
+            // sigue viendo el menú normal, sin cambios.
+            // window._firstTimeAutoVanilla marca este caso para script.js:
+            // gameplayStart no se dispara aquí — se difiere hasta que compren
+            // su primera gallina (ver el callback de GameSave.initAndLoad).
+            // OJO: no basta con "¿existe la clave?" — el motor autoguarda un
+            // save en blanco (chickens:0, todo por defecto) nada más arrancar,
+            // incluso sin que el jugador haga nada, así que la clave SIEMPRE
+            // existe desde el primer segundo. Hay que mirar dentro y comprobar
+            // si hay progreso real (alguna gallina comprada, o un reto ya
+            // completado) — un save vacío no cuenta como "ha jugado antes".
+            function _hasRealProgress(key) {
+                try {
+                    var data = window.GameSave && window.GameSave.load(key);
+                    if (!data || !data.state) return false;
+                    return (data.state.chickens > 0) || (data.state.hasRetired === true) ||
+                        (Array.isArray(data.chickensArr) && data.chickensArr.length > 0);
+                } catch (_) { return false; }
+            }
+            // Pedido explícito: solo en CrazyGames — el resto de builds (galaxy,
+            // itch.io...) mantienen el menú de selección para todo el mundo,
+            // sin excepción para primera sesión.
+            //
+            // BUG real encontrado: esta decisión (¿hay progreso real?) se tomaba
+            // antes de forma SÍNCRONA, en el instante en que el navegador parsea
+            // la página. Pero GameSave.load() para un jugador YA LOGUEADO en
+            // CrazyGames lee de _memStore, una caché en memoria que solo
+            // GameSave.initAndLoad() rellena — y de forma ASÍNCRONA (espera al
+            // SDK + descarga el save de la nube). En ese instante síncrono la
+            // caché todavía estaba SIEMPRE vacía, así que _hasRealProgress()
+            // devolvía "sin progreso" incluso con un save real en la nube — el
+            // jugador entraba directo a Vanilla una y otra vez, sesión tras
+            // sesión. Ahora se espera a GameSave.initAndLoad() (mismo mecanismo
+            // que ya usa script.js más abajo) antes de decidir nada.
+            //
+            // initAndLoad() llama a onReady() de forma SÍNCRONA e inmediata si
+            // window.CrazyGames no existe (ver shared/save.js) — así que para el
+            // resto de mercados, y para invitados de CrazyGames sin cuenta (que
+            // leen localStorage directo, sin nube), esto se resuelve en el mismo
+            // tick, sin ningún retraso perceptible. Solo un jugador LOGUEADO en
+            // CrazyGames espera de verdad (a la inicialización del SDK).
+            window._firstTimeAutoVanilla = false;
+            window.GameSave.initAndLoad(
+                ['chickenIdleSave', 'chickenIdleSave_speedrun', 'chickenIdleSave_adam', 'chickenIdleSave_manual', 'chickenIdleEndlessSave'],
+                function () {
+                    if (!_skipMenu && window.GAME_MARKET === 'crazygames') {
+                        var _hasAnySave = false;
+                        ['chickenIdleSave', 'chickenIdleSave_speedrun', 'chickenIdleSave_adam', 'chickenIdleSave_manual', 'chickenIdleEndlessSave'].forEach(function (k) {
+                            if (_hasRealProgress(k)) _hasAnySave = true;
+                        });
+                        if (!_hasAnySave) {
+                            _skipMenu = true;
+                            window._firstTimeAutoVanilla = true;
+                        }
+                    }
+
+                    if (_skipMenu) {
+                        // Hide main menu; game loop will start unpaused
+                        // Still init main menu so buttons work when user returns via Salir
+                        document.body.classList.add('in-game');
+                        window._inGame = true;
+                        if (!window._firstTimeAutoVanilla) window._cgMarkGameplayStarted?.();
+                        _initMainMenu();
+                        _initPauseMenu();
+                        // Size the intro container for the current viewport (needed for desktop scale)
+                        // and settle _panEndPx so Salir-from-pause restores correct proportions.
+                        _playIntroAnim();
+                        _showIntroEnd();
+                    } else {
+                        // Show main menu; block game loop until user acts
+                        window.gamePaused = true;
+                        var _mmo2 = document.getElementById('main-menu-overlay');
+                        if (_mmo2) _mmo2.style.display = 'flex';
+                        _initMainMenu();
+                        _initPauseMenu();
+                        _playIntroAnim();
+                        if (window.GameIntro) window.GameIntro.start();
+                    }
+                }
+            );
+        })();
+    </script>
+
+    <script>
+        // Pressed state for buttons — CSS :active unreliable on fast touch in WebView
+        (function () {
+            function addPressedListeners(selector) {
+                document.addEventListener('mousedown', function (e) {
+                    const btn = e.target.closest(selector);
+                    if (btn) {
+                        btn.classList.add('is-pressed');
+                        btn.style.setProperty('transform', 'scale(0.98)', 'important');
+                    }
+                }, true);
+                document.addEventListener('touchstart', function (e) {
+                    const btn = e.target.closest(selector);
+                    if (btn) {
+                        btn.classList.add('is-pressed');
+                        btn.style.setProperty('transform', 'scale(0.98)', 'important');
+                    }
+                }, { passive: true, capture: true });
+                ['mouseup', 'mouseleave', 'touchend', 'touchcancel'].forEach(function (ev) {
+                    document.addEventListener(ev, function (e) {
+                        document.querySelectorAll(selector + '.is-pressed').forEach(function (el) {
+                            el.classList.remove('is-pressed');
+                            el.style.removeProperty('transform');
+                        });
+                    }, { passive: true, capture: true });
+                });
+            }
+            addPressedListeners('.shop-btn');
+            addPressedListeners('.pixel-btn');
+            addPressedListeners('#eb-accept'); // botón "VER ANUNCIO" del boost — no es .shop-btn/.pixel-btn
+        })();
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,29 @@
+{
+  "name": "the-machinegg",
+  "version": "1.0.0",
+  "description": "Yumurta Fabrikası: Idle Tycoon",
+  "main": "index.html",
+  "scripts": {
+    "build": "node scripts/build-web.js",
+    "patch": "node scripts/patch-store.js",
+    "cap:sync": "npm run build && npx cap sync && npm run patch",
+    "cap:android": "npm run build && npx cap sync android && npm run patch && npx cap open android",
+    "cap:ios": "npm run build && npx cap sync ios && npm run patch && npx cap open ios",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@capacitor-community/admob": "^6.0.0",
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/app": "^6.0.0",
+    "@capacitor/core": "^6.1.2",
+    "@capacitor/ios": "^6.1.2",
+    "@capacitor/screen-orientation": "^6.0.0",
+    "@capacitor/status-bar": "^6.0.0",
+    "cordova-plugin-purchase": "^13.11.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.1.2"
+  },
+  "author": "",
+  "license": "ISC"
+}

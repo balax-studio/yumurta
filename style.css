@@ -1,0 +1,3137 @@
+@font-face {
+    font-family: 'Press Start 2P';
+    src: url('shared/vendor/fonts/PressStart2P-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    user-select: none;
+    outline: none;
+}
+
+img {
+    -webkit-user-drag: none;
+    user-drag: none;
+    pointer-events: none;
+}
+button img, a img { pointer-events: auto; }
+
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+img,
+canvas,
+.sky-extension,
+.earth-extension,
+header,
+.pixel-btn {
+    image-rendering: -moz-crisp-edges;
+    /* Firefox */
+    image-rendering: -webkit-optimize-contrast;
+    /* Safari */
+    image-rendering: pixelated;
+    /* Chrome, Edge, Opera */
+    image-rendering: crisp-edges;
+    /* Standard */
+}
+
+
+/* ── CURSORES ────────────────────────────────────────────────────────────────
+   NUNCA se ve un cursor del sistema. Los tres salen de pixelart_design/cursors.png
+   y los genera shared/cursors.js, que publica estas variables en :root.
+
+     --cur-hand    mano   · por defecto en TODO el juego (menú, intro, tienda, HUD)
+     --cur-magnet  imán   · en el canvas, al arrastrar/atraer huevos (lo pone el JS)
+     --cur-finger  dedo   · sobre cualquier botón o elemento clicable
+
+   Los valores de aquí son solo el FALLBACK hasta que carga el PNG (y por si no carga).
+   `cursor` es una propiedad heredada, así que ponerla en <html> la propaga a todo;
+   luego los clicables la sobrescriben con el dedo.
+   ──────────────────────────────────────────────────────────────────────────── */
+:root {
+    --cur-hand:   default;
+    --cur-magnet: grabbing;
+    --cur-finger: pointer;
+}
+
+html,
+body {
+    cursor: var(--cur-hand);
+}
+
+/* El navegador impone sus propios cursores a enlaces y campos de texto (mano del
+   sistema / cursor de texto). Los sustituimos para que no se cuele ninguno. */
+a,
+a:hover,
+button,
+summary,
+[role="button"] {
+    cursor: var(--cur-finger);
+}
+input,
+textarea,
+select {
+    cursor: var(--cur-hand);
+}
+
+body {
+    background-color: #000;
+    font-family: 'Press Start 2P', cursive;
+    color: #fff;
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+#game-container {
+    display: grid;
+    /*grid-template-columns: auto 425px;*/
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+        "farm header"
+        "farm shop";
+    justify-content: start;
+    height: 100vh;
+    /*padding: 0 10px 0 0;*/
+    gap: 0px;
+    box-sizing: border-box;
+}
+
+
+header {
+    grid-area: header;
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    background-image: url('pixelart_design/TOP.png');
+    background-repeat: repeat-x;
+    background-size: auto 100%;
+    background-position: center;
+    border: none;
+    padding: 10px 14px;
+    margin-bottom: 0;
+}
+
+/* Buttons never wrap or shrink */
+header > div:last-child {
+    flex-shrink: 0;
+}
+/* Counters can give space before buttons do */
+#stats-header,
+#money-counter {
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+#ranking-btn,
+#pause-btn {
+    width: 44px;
+    height: 44px;
+    background-color: transparent;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    cursor: var(--cur-finger);
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+#ranking-btn {
+    background-image: url('pixelart_design/button_challenge.png');
+    display: none !important; /* ponytail: temporarily hidden on request */
+}
+
+#main-ranking-btn,
+#rs-view-ranking-btn,
+#ranking-overlay {
+    display: none !important; /* ponytail: temporarily hidden on request */
+}
+
+#pause-btn {
+    background-image: url('pixelart_design/button_options.png');
+}
+
+#ranking-btn:hover:not(:disabled),
+#pause-btn:hover:not(:disabled) {
+    background-color: transparent !important;
+    transform: translateY(-2px);
+    box-shadow: none !important;
+}
+
+#ranking-btn:active,
+#pause-btn:active {
+    background-color: transparent !important;
+    transform: translate(2px, 2px);
+    box-shadow: none !important;
+}
+
+h1 {
+    font-size: 32px;
+    color: #ffd700;
+    text-shadow: 4px 4px 0 #d35400;
+    margin-bottom: 20px !important;
+}
+
+.pixel-counter {
+    display: flex;
+    align-items: center;
+}
+
+.pixel-counter-wrap {
+    position: relative;
+    display: inline-block;
+    height: 48px;
+    background: transparent;
+    box-sizing: border-box;
+}
+
+#stats-header .pixel-counter-wrap,
+#money-counter .pixel-counter-wrap {
+    border: none;
+}
+
+.pixel-counter-bg {
+    display: block !important;
+    height: 100%;
+    width: auto;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+.pixel-counter-val {
+    position: absolute;
+    top: 0;
+    color: #fff;
+    -webkit-text-stroke: 3px #6b3e75;
+    paint-order: stroke fill;
+    text-shadow: none;
+    white-space: nowrap;
+    pointer-events: none;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+#stats-header .pixel-counter-val {
+    left: 29.8%;
+    right: 5.3%;
+    justify-content: center;
+    font-size: 20px;
+}
+
+#money-counter .pixel-counter-val {
+    left: 18.5%;
+    /* 21px / 96px */
+    /*right: 3.1%;*/
+    /* 3px / 96px */
+}
+
+main {
+    display: contents;
+}
+
+#farm-area {
+    grid-area: farm;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    position: relative;
+    align-self: start;
+    box-sizing: content-box;
+    border-right: 4px solid #45293f;
+}
+
+.farm-status {
+    display: flex;
+    justify-content: space-between;
+    background: #8b5a2b;
+    padding: 10px;
+    border: 4px solid #3e2610;
+}
+
+.bar-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 10px;
+}
+
+.bar {
+    width: 80px;
+    height: 15px;
+    background: #000;
+    border: 2px solid #fff;
+    position: relative;
+}
+
+.bar-text {
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    top: 1px;
+    left: 0;
+    font-size: 8px;
+    color: white;
+    text-shadow: 1px 1px 0 #000;
+}
+
+.fill {
+    height: 100%;
+    width: 100%;
+}
+
+.food {
+    background: #ffaa00;
+}
+
+.water {
+    background: #00aaff;
+}
+
+/* Huevera y sorter desactivados en esta versión */
+#buy-box,
+#buy-sorter,
+#buy-sortbonus {
+    display: none !important;
+}
+
+/* ── Timer container (speedrun) — cuelga del header ─────────── */
+#timer-container {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a0f0a;
+    border: 4px solid #2a1a10;
+    border-top: none;
+    padding: 10px 6px 5px 8px;
+    border-radius: 0 0 10px 10px;
+    z-index: 10;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 14px;
+    color: #e74c3c;
+    text-shadow: 1px 1px 0 #000;
+    display: none;
+    align-items: center;
+    gap: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+    white-space: nowrap;
+}
+
+/* Trophy canvas: oculto en desktop, visible en portrait y landscape */
+#trophy-canvas {
+    display: none;
+}
+
+
+body.mode-landscape #trophy-canvas {
+    display: none !important;
+}
+
+body.mode-landscape .ranking-label {
+    display: inline !important;
+}
+
+#gameCanvas {
+    background: #87ceeb;
+    cursor: var(--cur-finger);
+    image-rendering: pixelated;
+    display: block;
+}
+
+#shop {
+    grid-area: shop;
+    width: auto;
+    height: 100%;
+    min-width: 0;
+    background: linear-gradient(135deg, #d7ccc8 0%, #a1887f 100%);
+    border: 6px solid #5c4033;
+    border-radius: 8px;
+    box-shadow: inset 5px 0 15px rgba(0, 0, 0, 0.15);
+    padding: 20px;
+    color: #3e2610;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    align-self: start;
+    max-height: calc(100vh - 130px);
+}
+
+/* Flechas a los lados del título "Shop" — arriba cuando está replegada,
+   abajo cuando está desplegada (misma clase #shop.is-expanded que ya
+   controla el resto del estado colapsado/expandido). */
+#shop-header .shop-arrow {
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    flex-shrink: 0;
+    margin: 0 8px !important;
+    background-image: url('pixelart_design/tienda_flecha_up.png');
+    background-size: 16px 16px;
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+}
+#shop.is-expanded #shop-header .shop-arrow {
+    background-image: url('pixelart_design/tienda_flecha_down.png');
+}
+body.mode-desktop #shop-header .shop-arrow {
+    display: none;
+}
+
+#shop-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 4px;
+    display: flex;
+    flex-direction: column;
+}
+
+.shop-group-header {
+    font-family: inherit;
+    font-size: 10px;
+    color: #7a4a28;
+    padding: 8px 0 4px;
+    margin-top: 5px;
+    letter-spacing: 1px;
+    text-align: center;
+    pointer-events: none;
+    user-select: none;
+}
+
+h2 {
+    font-size: 20px;
+    text-align: center;
+    margin-bottom: 15px;
+    color: #4e342e;
+    text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.5);
+    border-bottom: 2px dashed #8d6e63;
+    padding-bottom: 10px;
+}
+
+.pixel-btn,
+.shop-btn {
+    font-family: inherit;
+    background: #f4d03f;
+    border: 4px solid;
+    border-color: #fff #d35400 #d35400 #fff;
+    border-radius: 4px;
+    box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.15);
+    color: #5c4033;
+    font-weight: bold;
+    padding: 10px;
+    cursor: var(--cur-finger);
+    text-transform: uppercase;
+    font-size: 12px;
+    transition: transform 0.12s ease-out, box-shadow 0.12s ease-out;
+}
+
+.pixel-btn:hover:not(:disabled),
+.shop-btn:hover:not(:disabled) {
+    /*background: #f1c40f;
+    transform: translateY(-2px);
+    box-shadow: 3px 5px 0px rgba(0, 0, 0, 0.2);
+    */
+}
+
+
+.pixel-btn:active, .pixel-btn.is-pressed,
+.shop-btn:active, .shop-btn.is-pressed {
+    border-color: #d35400 #fff #fff #d35400;
+    transform: translateY(3px);
+    box-shadow: 0px 0px 0px rgba(0, 0, 0, 0.1);
+    transition: none;
+}
+
+.pixel-btn.small {
+    padding: 5px;
+    font-size: 8px;
+}
+
+#sell-btn {
+    background: #ffd700;
+    font-weight: bold;
+}
+
+.shop-btn {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    grid-template-areas: "title price" "bottom bottom";
+    grid-template-rows: auto auto;
+    width: 100%;
+    margin-bottom: 15px;
+    font-size: 8px;
+    background: #e0e0e0;
+    line-height: 1.4;
+    padding: 6px 8px;
+    gap: 2px 6px;
+}
+
+.shop-btn .btn-title {
+    grid-area: title;
+    text-align: left;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 8px;
+}
+
+.shop-btn .btn-price {
+    grid-area: price;
+    text-align: right;
+    white-space: nowrap;
+    font-size: 8px;
+}
+
+/* Segunda fila: info % izquierda, Lv. derecha — ahora como hijos directos del grid */
+.btn-row2 {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.shop-btn>.upg-info {
+    grid-area: bottom;
+    color: #bf8c6a;
+    font-size: 7px;
+    line-height: 1.4;
+    white-space: normal;
+    overflow: visible;
+    min-width: 0;
+    text-align: left;
+    justify-self: start;
+    color: white !important;
+    font-size: 9px !important;
+    align-self: end !important;
+}
+
+.shop-btn>.lv-corner {
+    grid-area: bottom;
+    font-size: 7px;
+    color: white;
+    font-family: inherit;
+    line-height: 1.4;
+    white-space: nowrap;
+    text-align: right;
+    justify-self: end;
+    align-self: center;
+    position: absolute;
+    /* left: 50%; */
+    width: 100%;
+    height: 24px;
+    line-height: 25px;
+    bottom: 18px;
+    font-size: 8px !important;
+    /* -webkit-transform-origin-x: 50%; */
+    text-align: center;
+}
+
+/* .upg-info / .lv-corner inside .btn-row2 keep original styles */
+.btn-row2 .upg-info {
+    color: #bf8c6a;
+    font-size: 8px;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+}
+
+.btn-row2 .lv-corner {
+    font-size: 11px;
+    color: #a07850;
+    font-family: inherit;
+    line-height: 1.3;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.shop-btn * {
+    pointer-events: none;
+}
+
+.shop-btn:disabled {
+    opacity: 0.5;
+    cursor: var(--cur-hand);
+    transform: none;
+    border-color: #fff #666 #666 #fff;
+}
+
+.maxed-btn {
+    background: #6d8e63 !important;
+    border-color: #8dab83 #3d5e33 #3d5e33 #8dab83 !important;
+    color: #f1f8e9 !important;
+    opacity: 0.9 !important;
+}
+
+.maxed-btn .btn-price {
+    color: #ffeb3b !important;
+    font-weight: bold;
+}
+
+#game-tooltip {
+    position: fixed;
+    background: transparent;
+    border: 5px solid transparent;
+    border-image: url('pixelart_design/panel_purple_small.png') 5 fill / 5px / 0 stretch;
+    background-color: #45293f;   /* tapa rayitas 9-slice (interior del sprite) */
+    background-clip: padding-box;
+    image-rendering: pixelated;
+    padding: 8px 10px;
+    color: #ffffff;
+    font-size: 8px;
+    line-height: 1.5;
+    pointer-events: none;
+    z-index: 200000;
+    max-width: 250px;
+    text-shadow: 0px 2px 0px rgba(0,0,0,0.65);
+    box-shadow: 4px 4px 0px rgba(0,0,0,0.35);
+    display: none;
+}
+
+#shop-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: #c36bca #6b3e75;
+}
+
+#ranking-list,
+html,
+body {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+}
+
+#shop-scroll::-webkit-scrollbar {
+    width: 14px;
+}
+
+#shop-scroll::-webkit-scrollbar-track {
+    background: #6b3e75;
+    border: 3px solid #4a235a;
+    border-radius: 4px;
+}
+
+#shop-scroll::-webkit-scrollbar-thumb {
+    background: #c36bca;
+    border: 3px solid #9b59b6;
+    border-radius: 4px;
+}
+
+#shop-scroll::-webkit-scrollbar-thumb:hover {
+    background: #d98fe0;
+}
+
+#ranking-list::-webkit-scrollbar,
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+    width: 14px;
+}
+
+#ranking-list::-webkit-scrollbar-track,
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track {
+    background: #4a2e15;
+    border: 3px solid #3e2723;
+    border-radius: 4px;
+}
+
+#ranking-list::-webkit-scrollbar-thumb,
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb {
+    background: #f4d03f;
+    border: 3px solid #d35400;
+    border-radius: 4px;
+}
+
+#ranking-list::-webkit-scrollbar-thumb:hover,
+html::-webkit-scrollbar-thumb:hover,
+body::-webkit-scrollbar-thumb:hover {
+    background: #f1c40f;
+}
+
+/* (landscape tier removed — all horizontal screens use body.mode-desktop) */
+@media (max-width: 0px) {
+    body {
+        padding: 0;
+        align-items: flex-start;
+    }
+
+    #game-container {
+        display: grid;
+        grid-template-columns: auto minmax(200px, 30%);
+        grid-template-rows: auto 1fr;
+        grid-template-areas:
+            "farm header"
+            "farm shop";
+        justify-content: center;
+        width: 100vw;
+        height: 100vh;
+        max-width: none;
+        padding: 0;
+        gap: 10px;
+        border: none;
+        border-radius: 0;
+        background-color: transparent;
+    }
+
+    header {
+        grid-area: header;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto auto;
+        gap: 5px;
+        align-items: center;
+        margin-bottom: 0;
+        padding: 5px;
+        text-align: center;
+    }
+
+    h1 {
+        font-size: 12px;
+        grid-column: 1 / span 2;
+        grid-row: 1;
+        margin-bottom: 2px;
+    }
+
+    header>div {
+        display: contents;
+    }
+
+    /* Buttons div: flex container, auto-places at row 2 col 2 */
+    header>div:last-child {
+        display: flex !important;
+        align-items: stretch !important;
+        height: auto !important;
+        gap: 4px !important;
+    }
+
+    /* Gallinas — fila 2 col 1 */
+    #stats-header>.pixel-counter-wrap {
+        grid-column: 1;
+        grid-row: 2;
+    }
+
+    /* Dinero — fila 3 ancho completo */
+    #money-counter>.pixel-counter-wrap {
+        grid-column: 1 / span 2;
+        grid-row: 3;
+    }
+
+    .pixel-counter-wrap {
+        height: 30px !important;
+    }
+
+    #stats-header .pixel-counter-wrap,
+    #money-counter .pixel-counter-wrap {
+        border: none !important;
+    }
+
+    main {
+        display: contents;
+    }
+
+    #debug-floating {
+        display: none !important;
+    }
+
+    #farm-area {
+        grid-area: farm;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: stretch;
+        min-width: 0;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    #game-viewport {
+        display: flex !important;
+        flex-direction: column;
+        width: 100%;
+        height: 100%;
+        align-items: stretch;
+    }
+
+    #game-viewport .sky-extension {
+        display: block;
+        flex: 1;
+        overflow: hidden;
+        min-height: 0;
+        margin-bottom: -2px;
+    }
+
+    #game-viewport .earth-extension {
+        display: block;
+        flex: 1;
+        overflow: hidden;
+        min-height: 0;
+        margin-top: -2px;
+    }
+
+    #game-viewport .ext-img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center bottom;
+    }
+
+    #game-viewport .earth-extension .ext-img {
+        object-position: center top;
+    }
+
+    #gameCanvas {
+        width: 100%;
+        height: auto;
+        flex-shrink: 0;
+        align-self: center;
+        touch-action: none;
+        border: none;
+        border-radius: 0;
+    }
+
+    #shop {
+        grid-area: shop;
+        width: auto;
+        max-width: none;
+        min-width: 0;
+        overflow: hidden;
+        padding: 5px;
+        max-height: none;
+        border: none;
+        border-radius: 0;
+        display: flex;
+        flex-direction: column;
+        align-self: stretch;
+    }
+
+    #shop-scroll {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+    }
+
+    #shop h2 {
+        font-size: 12px;
+        margin-bottom: 8px;
+        padding-bottom: 5px;
+    }
+
+    .shop-btn {
+        margin-bottom: 8px;
+        padding: 6px 8px;
+    }
+
+    #ranking-btn,
+    #pause-btn {
+        width: 30px !important;
+        height: 30px !important;
+        min-width: 30px !important;
+        max-width: 30px !important;
+        min-height: 30px !important;
+        max-height: 30px !important;
+        padding: 0 !important;
+        border: none !important;
+        background-color: transparent !important;
+        box-shadow: none !important;
+        flex: 0 0 30px !important;
+    }
+
+    /* Pause button in shop-header — idéntico al mute */
+    body.mode-landscape #shop-header #pause-btn {
+        position: absolute;
+        left: 22px;
+        width: 18px !important;
+        height: 18px !important;
+        min-width: 18px !important;
+        max-width: 18px !important;
+        min-height: 18px !important;
+        max-height: 18px !important;
+        padding: 0 !important;
+        border: none !important;
+        border-radius: 0 !important;
+        background-color: transparent !important;
+        box-shadow: none !important;
+        display: block !important;
+    }
+
+
+
+    #mute-btn,
+    #toggle-info-btn {
+        width: 18px !important;
+        height: 18px !important;
+        font-size: 8px !important;
+        padding: 2px !important;
+        border-width: 2px !important;
+    }
+
+
+
+    #steam-btn {
+        font-size: 8px !important;
+        padding: 6px !important;
+        margin-top: 5px !important;
+        line-height: 1.2 !important;
+    }
+
+    /* Ranking Overlay — mobile landscape */
+    #ranking-overlay>div {
+        padding: 8px !important;
+        width: 98vw !important;
+        max-width: 98vw !important;
+        max-height: 98vh !important;
+        border-width: 3px !important;
+        gap: 6px !important;
+        overflow-y: auto !important;
+    }
+
+    #ranking-overlay h2 {
+        font-size: 14px !important;
+        margin: 0 !important;
+    }
+
+    /* 2x2 grid on mobile landscape */
+    #challenges-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 5px !important;
+    }
+
+    #ranking-overlay .challenge-card {
+        padding: 6px !important;
+        border-width: 2px !important;
+        gap: 4px !important;
+    }
+
+    #ranking-overlay .challenge-card h3 {
+        font-size: 11px !important;
+    }
+
+    #ranking-overlay .challenge-card p {
+        font-size: 9px !important;
+        line-height: 1.3 !important;
+    }
+
+    #ranking-overlay .challenge-card button {
+        padding: 5px !important;
+        font-size: 10px !important;
+        border-width: 2px !important;
+    }
+
+    #ranking-list {
+        font-size: 9px !important;
+    }
+
+    #ranking-list-title {
+        font-size: 11px !important;
+    }
+
+    #ranking-status {
+        font-size: 14px !important;
+        color: white !important;
+        margin-top: 40px !important;
+        text-shadow: 2px 2px black;
+        text-transform: uppercase;
+    }
+
+    #resume-btn {
+        padding: 8px 12px !important;
+        font-size: 10px !important;
+    }
+}
+
+/* Challenge panel — desktop tweaks */
+@media (min-width: 951px) {
+    #ranking-overlay>div {
+        height: 85vh !important;
+        max-height: 85vh !important;
+    }
+
+    #ranking-overlay h2 {
+        font-size: 16px !important;
+    }
+
+    #ranking-overlay .challenge-card h3 {
+        font-size: 13px !important;
+    }
+
+    #ranking-overlay .challenge-card p {
+        font-size: 11px !important;
+        line-height: 1.3 !important;
+    }
+
+    #ranking-overlay .challenge-card button {
+        padding: 7px !important;
+        font-size: 12px !important;
+    }
+
+    #ranking-list-title {
+        font-size: 12px !important;
+    }
+
+    #ranking-status {
+        font-size: 14px !important;
+        color: white !important;
+        margin-top: 40px !important;
+        text-shadow: 2px 2px black;
+    }
+
+    #ranking-list {
+        font-size: 10px !important;
+    }
+}
+
+/* ── Main menu intro cinematic ────────────────────────────────── */
+:root { --intro-h: 1264px; }
+
+/* 1. Scene fades in from black */
+#intro-pan-wrapper {
+    animation: fade-in 1s ease forwards;
+    transition: filter 0.25s ease;
+}
+#intro-pan-wrapper.is-blurred {
+    filter: blur(6px);
+}
+
+/* 2. Camera pan driven by JS rAF (see _playIntroAnim) */
+
+/* Cloud drifts — parallax: big/close = fast, small/far = slow */
+/* Capa 1 (204px) — close, left→right */
+#cloud-1 { animation: cloud-lr 48s -8s  linear infinite; }
+/* Capa 2 (196px) — close, right→left */
+#cloud-2 { animation: cloud-rl 60s -22s linear infinite; }
+/* Capa 3 (116px) — far,   right→left */
+#cloud-3 { animation: cloud-rl 80s -5s  linear infinite; }
+/* Capa 4 (116px) — far,   left→right */
+#cloud-4 { animation: cloud-lr 72s -35s linear infinite; }
+/* Capa 5 (156px) — mid,   left→right */
+#cloud-5 { animation: cloud-lr 64s -18s linear infinite; }
+/* Extra clouds — lower in the sky */
+#cloud-6 { animation: cloud-rl 75s -40s linear infinite; }
+#cloud-7 { animation: cloud-lr 55s -12s linear infinite; }
+#cloud-8 { animation: cloud-rl 90s -28s linear infinite; }
+#cloud-9 { animation: cloud-rl 68s -5s  linear infinite; }
+
+@keyframes introHeartFly {
+    0%   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    100% { opacity: 0; transform: translateX(-50%) translateY(-40px); }
+}
+/* Logo falls like a heavy crate */
+@keyframes mm-logo-fall {
+    0%   { transform: translateY(-120vh); }
+    70%  { transform: translateY(0) scaleX(0.94) scaleY(1.07); }
+    80%  { transform: translateY(-14px) scaleX(1.02) scaleY(0.96); }
+    89%  { transform: translateY(5px); }
+    95%  { transform: translateY(-2px); }
+    100% { transform: translateY(0); }
+}
+/* Whole overlay shakes on landing */
+@keyframes mm-screen-shake {
+    0%,100% { transform: translate(0, 0); }
+    15%     { transform: translate(-10px,  5px); }
+    30%     { transform: translate( 10px, -5px); }
+    50%     { transform: translate( -7px,  3px); }
+    70%     { transform: translate(  5px, -2px); }
+    85%     { transform: translate( -3px,  1px); }
+}
+/* Shake via CSS translate property (independent of transform: translateY(pan)) */
+@keyframes mm-shake-translate {
+    0%,100% { translate: 0px 0px; }
+    15%     { translate: -10px  5px; }
+    30%     { translate:  10px -5px; }
+    50%     { translate:  -7px  3px; }
+    70%     { translate:   5px -2px; }
+    85%     { translate:  -3px  1px; }
+}
+/* Capture mode (H key, farm/script.js): hide main menu PLAY button + footer bar for clean video recording */
+body.capture-mode-hide-menu #mm-jugar-btn,
+body.capture-mode-hide-menu #mm-bottom-bar,
+body.capture-mode-hide-menu #mm-portrait-footer-bg,
+body.capture-mode-hide-menu #achievement-popup {
+    display: none !important;
+}
+
+/* Oferta de boost (#eb-offer): pulso continuo mientras está visible, para que
+   destaque — antes aparecía sin ninguna señal visual ni sonora. */
+@keyframes eb-offer-pulse {
+    0%, 100% { transform: scale(1);     box-shadow: 0 0 0px rgba(241, 196, 15, 0); }
+    50%      { transform: scale(1.03); box-shadow: 0 0 14px rgba(241, 196, 15, 0.85); }
+}
+#eb-offer {
+    animation: eb-offer-pulse 1.3s ease-in-out infinite;
+}
+
+/* JUGAR crate button hover */
+#mm-jugar-btn:hover  .mm-jugar-crate { transform: translateY(-5px); }
+#mm-jugar-btn:active .mm-jugar-crate { transform: translateY(1px);  }
+
+/* Ground shadow under JUGAR — always visible, dims when button lifts on hover */
+#mm-jugar-btn::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    width: 90%;
+    height: 8px;
+    background: rgba(0,0,0,0.32);
+    filter: blur(1px);
+    transform: translateX(-50%) scaleX(1);
+    opacity: 0.45;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    pointer-events: none;
+}
+#mm-jugar-btn:hover::after {
+    opacity: 0.15;
+    transform: translateX(-50%) scaleX(0.75);
+}
+
+/* Ground shadow under mode crates — always visible, dims when button lifts on hover */
+.mm-prado-mode-btn {
+    position: relative;
+}
+.mm-prado-mode-btn::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 50%;
+    width: 92%;
+    height: 8px;
+    background: rgba(0,0,0,0.32);
+    filter: blur(1px);
+    transform: translateX(-50%) scaleX(1);
+    opacity: 0.45;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    pointer-events: none;
+}
+.mm-prado-mode-btn:hover::after {
+    opacity: 0.15;
+    transform: translateX(-50%) scaleX(0.75);
+}
+
+/* ── Main menu: mode-select crates row ────────────────────────────────────── */
+#mm-prado-crates-row {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 28%;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 3%;
+    pointer-events: auto;
+    z-index: 720;
+    padding: 0 1%;
+    box-sizing: border-box;
+    /* display toggled by JS */
+}
+.mm-prado-mode-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    flex-shrink: 0;
+}
+.prado-crate-inner {
+    position: relative;
+    display: inline-block;
+    line-height: 0;
+    filter: drop-shadow(rgba(0,0,0,0.6) 0px 6px 16px);
+}
+.prado-crate-frame {
+    width: 240px;
+    height: auto;
+    image-rendering: pixelated;
+    display: block;
+    transition: transform 0.12s ease;
+    position: relative;
+    z-index: 2;
+}
+.prado-mode-icon {
+    position: absolute;
+    z-index: 1;
+    top: 18%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: var(--menu-mode-icon-w, 81%);
+    aspect-ratio: 72 / 28;
+    background-image: url(pixelart_design/mode_icons.png);
+    background-size: 500% 100%;
+    image-rendering: pixelated;
+    /* background-position definida por ID de cada modo */
+}
+#mm-prado-normal   .prado-mode-icon { background-position:   0% 0%; }
+#mm-prado-adam     .prado-mode-icon { background-position:  25% 0%; }
+#mm-prado-fourth   .prado-mode-icon { background-position:  50% 0%; }
+#mm-prado-endless  .prado-mode-icon { background-position:  75% 0%; }
+#mm-prado-speedrun .prado-mode-icon { background-position: 100% 0%; }
+.prado-mode-name {
+    position: absolute;
+    z-index: 3;
+    top: 0;
+    bottom: 74%;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-family: 'Press Start 2P', monospace;
+    font-size: var(--prado-name-size, 10px);
+    color: #fff;
+    text-shadow: 1px 1px 0 #000, 2px 2px 0 #000;
+    pointer-events: none;
+    white-space: normal;
+    line-height: 1.3;
+    padding: 0 4%;
+    box-sizing: border-box;
+}
+.prado-completed-badge {
+    position: absolute;
+    z-index: 4;
+    top: 5%;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: #5dff6e;
+    text-shadow: 1px 1px 0 #000, 0 0 6px #00ff44;
+    pointer-events: none;
+    white-space: nowrap;
+}
+.prado-rank-badge {
+    position: absolute;
+    z-index: 4;
+    top: 5%;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    text-shadow: 1px 1px 0 #000;
+    pointer-events: none;
+    white-space: nowrap;
+}
+.prado-desc {
+    position: absolute;
+    z-index: 3;
+    top: var(--prado-desc-top, 30%);
+    bottom: calc(var(--prado-actions-bottom, 5%) + var(--prado-btn-h, 28px) + 6px);
+    left: var(--prado-inner-pad, 4%);
+    right: var(--prado-inner-pad, 4%);
+    text-align: center;
+    font-family: 'Press Start 2P', monospace;
+    font-size: var(--prado-desc-size, 7px);
+    color: #fff;
+    line-height: 1.4;
+    text-shadow: 1px 1px 0 #000;
+    pointer-events: none;
+    white-space: normal;
+    display: flex;
+    align-items: flex-start;
+    overflow: hidden;
+}
+.prado-actions {
+    position: absolute;
+    z-index: 3;
+    bottom: var(--prado-actions-bottom, 5%);
+    left: var(--prado-inner-pad, 4%);
+    right: var(--prado-inner-pad, 4%);
+    display: flex;
+    gap: 4px;
+}
+.prado-play-btn {
+    flex: 1;
+    height: var(--prado-btn-h, 28px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Press Start 2P', monospace;
+    font-size: var(--prado-play-size, 9px);
+    padding: 0 4px;
+    color: white;
+    border: 2px solid #fff;
+    /* background y box-shadow definidos por ID de cada modo */
+}
+#mm-prado-normal   .prado-play-btn { background: #2980b9; box-shadow: 0 2px 0 #1c5980; }
+#mm-prado-adam     .prado-play-btn { background: #27ae60; box-shadow: 0 2px 0 #1e8449; }
+#mm-prado-fourth   .prado-play-btn { background: #c0392b; box-shadow: 0 2px 0 #922b21; }
+#mm-prado-endless  .prado-play-btn { background: #8e44ad; box-shadow: 0 2px 0 #6c3483; }
+#mm-prado-speedrun .prado-play-btn { background: #e67e22; box-shadow: 0 2px 0 #d35400; }
+.prado-play-btn,
+.prado-restart-btn {
+    transition: none !important;
+    will-change: transform;
+}
+.prado-play-btn:active,
+.prado-play-btn.is-pressed {
+    transform: translateY(3px) !important;
+}
+.prado-restart-btn {
+    flex: 0 0 auto;
+    height: var(--prado-btn-h, 28px);
+    padding: 0px 8px 4px 8px;
+    font-size: var(--prado-restart-size, 8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.prado-restart-btn:active,
+.prado-restart-btn.is-pressed {
+    transform: translateY(3px) !important;
+    transition: none !important;
+}
+
+/* Rope snap — shrinks from bottom toward anchor */
+@keyframes mm-rope-snap {
+    0%   { transform: scaleY(1); opacity: 1; }
+    35%  { transform: skewX(12deg) scaleY(0.6); opacity: 0.7; }
+    100% { transform: scaleY(0);  opacity: 0; }
+}
+/* Modal slide-up / slide-down */
+@keyframes mm-slide-up {
+    from { transform: translateY(110%); }
+    to   { transform: translateY(0);    }
+}
+@keyframes mm-slide-down {
+    from { transform: translateY(0);    }
+    to   { transform: translateY(110%); }
+}
+.mm-slide-in  { animation: mm-slide-up   0.32s cubic-bezier(0.2, 0, 0.3, 1) both; }
+.mm-slide-out { animation: mm-slide-down 0.26s cubic-bezier(0.4, 0, 1, 1)   both; }
+
+/* Always show pointer cursor on all interactive elements */
+button, [role="button"], a, label[for], select, .mm-prado-mode-btn, #mm-prado-volver, #mm-jugar-btn {
+    cursor: var(--cur-finger) !important;
+}
+#mm-home { cursor: var(--cur-finger); }
+@keyframes cloud-lr {
+    from { left: -25%; }
+    to   { left: 110%; }
+}
+@keyframes cloud-rl {
+    from { left: 110%; }
+    to   { left: -25%; }
+}
+
+
+/* ── Main menu bottom bar ──────────────────────────────────────── */
+.mm-bar-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 10px 12px;
+    font-size: 9px;
+    background: none;
+    border: none;
+    box-shadow: none;
+    cursor: var(--cur-finger);
+    color: #fff;
+    text-shadow: 1px 1px 0 #00000050, 2px 2px 0 #00000050;
+}
+.mm-bar-btn .mm-bar-icon {
+    filter: drop-shadow(1px 1px 0 #00000050) drop-shadow(1px 1px 0 #00000050);
+}
+.mm-bar-icon {
+    width: 32px;
+    height: 32px;
+    display: inline-block;
+    flex-shrink: 0;
+    background-image: url('pixelart_design/button_icons.png');
+    background-size: 192px 32px;
+    image-rendering: pixelated;
+}
+.mm-icon-ajustes { background-position:   0px 0; }
+.mm-icon-ranking { background-position: -32px 0; }
+.mm-icon-logros  { background-position: -64px 0; }
+.mm-icon-salir   { background-position: -96px 0; }
+.mm-icon-borrar  { background-position: -128px 0; }
+.mm-icon-info    { background-position: -160px 0; }
+.mm-icon-steam {
+    background-image: url('pixelart_design/steam_logo.png');
+    background-size: 28px 28px;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-color: transparent;
+    image-rendering: auto;
+}
+.card-icon {
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    flex-shrink: 0;
+    background-image: url('pixelart_design/button_icons.png');
+    background-size: 96px 16px;
+    image-rendering: pixelated;
+}
+.card-icon-borrar { background-position: -64px 0; }
+.card-icon-info   { background-position: -80px 0; }
+.mm-bar-label {
+    display: none;
+}
+body.mode-desktop .mm-bar-btn {
+    flex-direction: row;
+    gap: 8px;
+    padding: 10px 16px;
+    font-size: 11px;
+}
+body.mode-desktop .mm-bar-label {
+    display: inline;
+}
+
+
+/* FIRST-TIME PLAYER HINT — Buy Chicken pulse */
+@keyframes cg-hint-pulse {
+    0% {
+        box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.15), 0 0 0px rgba(46, 204, 113, 0);
+    }
+
+    50% {
+        box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.15), 0 0 18px 7px rgba(46, 204, 113, 0.85);
+    }
+
+    100% {
+        box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.15), 0 0 0px rgba(46, 204, 113, 0);
+    }
+}
+
+.cg-first-time-hint {
+    animation: cg-hint-pulse 1.1s ease-in-out infinite !important;
+    background: #27ae60 !important;
+    color: white !important;
+    border-color: #fff #1a7a43 #1a7a43 #fff !important;
+}
+
+/* RETIRE BUTTON PULSE */
+@keyframes retire-pulse {
+    0% {
+        box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.15), 0 0 0px rgba(255, 200, 0, 0);
+    }
+
+    50% {
+        box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.15), 0 0 18px 6px rgba(255, 180, 0, 0.7);
+    }
+
+    100% {
+        box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.15), 0 0 0px rgba(255, 200, 0, 0);
+    }
+}
+
+#buy-retire {
+    animation: retire-pulse 2s ease-in-out infinite;
+}
+
+/* "MEJORA RECIÉN DESBLOQUEADA" — zoom sutil y breve cuando un botón de tienda
+   aparece por primera vez (pasa de display:none a visible, ver
+   btn.classList.add('newly-available') en updateUI(), scenarios/farm/script.js).
+   Se quita sola a los 2.4s. */
+@keyframes shop-btn-newly-available {
+    0%   { transform: scale(1); }
+    30%  { transform: scale(1.06); }
+    60%  { transform: scale(0.99); }
+    100% { transform: scale(1); }
+}
+
+/* :not(:active):not(.is-pressed) — si el jugador pulsa el botón mientras
+   anima, que gane el feedback normal de pulsado (translateY) y no el zoom,
+   evitando que ambos transforms peleen entre sí. */
+.shop-btn.newly-available:not(:active):not(.is-pressed) {
+    animation: shop-btn-newly-available 0.8s ease-in-out 3;
+}
+
+/* MOBILE PORTRAIT — ahora soportado, no mostrar mensaje de rotación */
+
+/* Ad buttons */
+.shop-btn-row {
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    margin-bottom: 15px;
+    align-items: stretch;
+}
+
+.shop-btn-row .shop-btn {
+    margin-bottom: 0;
+    flex: 1;
+}
+
+.free-ad-btn {
+    flex: 0 0 48px !important;
+    background: #27ae60 !important;
+    color: white !important;
+    border-color: #fff #1a7a43 #1a7a43 #fff !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 2px;
+    font-size: 7px !important;
+    padding: 6px 4px !important;
+    display: none;
+}
+
+/* Random offer popup */
+#random-offer-popup {
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 8px;
+    flex-shrink: 0;
+}
+
+#random-offer-popup.show {
+    display: flex;
+}
+
+#offer-close-btn {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 11px;
+    cursor: var(--cur-finger);
+    padding: 0;
+    line-height: 1;
+    margin-top: 2px;
+}
+
+#offer-accept-btn {
+    width: 100%;
+    background: #e67e22;
+    border-color: #fff #a04000 #a04000 #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+}
+
+#offer-accept-btn:hover:not(:disabled) {
+    background: #d35400;
+}
+
+#random-offer-popup.boost-active #offer-accept-btn {
+    background: #27ae60;
+    border-color: #fff #1a7a44 #1a7a44 #fff;
+    cursor: var(--cur-hand);
+}
+
+#random-offer-popup.boost-active #offer-close-btn {
+    display: none;
+}
+
+#random-offer-popup.boost-active #offer-accept-btn:hover {
+    background: #27ae60;
+    transform: none;
+    box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.15);
+}
+
+#offer-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+#offer-right {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+#offer-countdown {
+    font-size: 6px;
+    font-family: 'Press Start 2P', monospace;
+    opacity: 0.85;
+}
+
+#offer-desc-el {
+    font-size: 6px;
+    font-family: 'Press Start 2P', monospace;
+    line-height: 1.5;
+    text-align: left;
+    opacity: 0.85;
+}
+
+/* Achievement popup */
+#achievement-popup {
+    position: fixed;
+    bottom: -130px;
+    right: 20px;
+    background: #2c1810;
+    border: 3px solid #f39c12;
+    border-radius: 6px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 99998;
+    transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    min-width: 180px;
+    max-width: 260px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+    pointer-events: none;
+}
+
+#achievement-popup.show {
+    bottom: 20px;
+}
+
+#achievement-icon {
+    font-size: 22px;
+    flex-shrink: 0;
+}
+
+#achievement-badge {
+    color: #f39c12;
+    font-size: 7px;
+    font-family: 'Press Start 2P', monospace;
+    margin-bottom: 4px;
+}
+
+#achievement-title {
+    color: #fff;
+    font-size: 8px;
+    font-family: 'Press Start 2P', monospace;
+    margin-bottom: 3px;
+}
+
+#achievement-desc {
+    color: #bbb;
+    font-size: 6px;
+    font-family: 'Press Start 2P', monospace;
+}
+
+/* ── MODO PORTRAIT (móvil vertical) — ver bloque completo más abajo ── */
+
+/* Bocadillos HTML: cajón de dimensiones fijas, font-size ajustado por JS (_fitBubble) */
+
+.bubble-inner {
+    font-size: 7px;
+    white-space: normal;
+    line-height: 1.4;
+}
+
+/* Quitar background-image de las extensiones en portrait (la imagen es el <img> interno) */
+
+
+
+/* ─────────────────────────────────────────────────────────────
+   PASO 1 — MODO PORTRAIT: sky + earth extension
+   #game-viewport es transparente en desktop (display:contents).
+   En portrait se convierte en un flex-column con cielo y tierra.
+   ───────────────────────────────────────────────────────────── */
+
+/* Desktop: el wrapper desaparece del layout, el canvas queda igual */
+#game-viewport {
+    display: contents;
+}
+
+/* Las extensiones están ocultas por defecto; portrait y desktop las activan. */
+.sky-extension,
+.earth-extension {
+    display: none;
+}
+
+/* ── Desktop: extensiones de cielo y tierra ───────────────────────────────────
+   Antes solo se veían en portrait, y en desktop quedaba el negro del `body`
+   (background-color: #000) por encima y por debajo del canvas.
+
+   El montaje: #game-viewport Y #cine-frame son `display: contents`, así que los
+   hijos reales del flex-column de #farm-area son .sky-extension, #gameCanvas y
+   .earth-extension. Solo hay que mostrarlas y dejar que crezcan.
+   ───────────────────────────────────────────────────────────────────────────── */
+/* Fuente fija de los globos "agua/comida agotada" — separado de portrait.css
+   a propósito, para poder ajustar cada modo sin afectar al otro. */
+body.mode-desktop #water-bubble .bubble-inner,
+body.mode-desktop #food-bubble .bubble-inner {
+    font-size: 7px;
+}
+
+body.mode-desktop #farm-area {
+    /* Era `start`: #farm-area se encogía a la altura del canvas y el resto de la
+       columna (que ocupa las 2 filas del grid, 100vh) se veía negro. */
+    align-self: stretch;
+    /* Con el gap de 15px quedarían franjas negras ENTRE las extensiones y el canvas. */
+    gap: 0;
+    justify-content: center;
+}
+body.mode-desktop .sky-extension,
+body.mode-desktop .earth-extension {
+    display: block;
+    flex: 1 1 0;      /* se reparten a partes iguales el alto que sobra */
+    min-height: 0;
+    width: 100%;
+    background-repeat: no-repeat;
+    background-size: 100% auto;
+    overflow: hidden;
+}
+body.mode-desktop .sky-extension {
+    background-image: url('pixelart_design/bg_top.png');
+    background-position: center bottom;   /* su borde inferior pega con el canvas */
+}
+body.mode-desktop .earth-extension {
+    background-image: url('pixelart_design/bg_bottom.png');
+    background-position: center top;      /* su borde superior pega con el canvas */
+}
+body.mode-desktop #gameCanvas {
+    /* No lo estires: conserva el tamaño que le calcula performDesktopAutoScale(). */
+    flex: none;
+}
+
+/* ── Cinematic layout ────────────────────────────────────────────────────────
+   Bars and fade overlay live inside #game-viewport as position:absolute so
+   they are anchored to the viewport edges regardless of content Y shift.
+   Content Y shift is applied to #cine-frame (the inner content wrapper).
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* Bars: fixed to viewport top/bottom, unaffected by content shift */
+.cine-bar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    background: #000;
+    z-index: 300;
+    pointer-events: none;
+    height: 0;
+}
+.cine-bar-top    { top: 0;    height: var(--cine-bar-top, 0%); }
+.cine-bar-bottom { bottom: 0; height: var(--cine-bar-bot, 0%); }
+
+/* Fade overlay: covers entire viewport — z-index above retire-cine-root (10000) */
+#cine-fade {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    opacity: 0;
+    z-index: 10001;
+    pointer-events: none;
+}
+
+/* Content frame: transparent by default so children join game-viewport flex */
+#cine-frame {
+    display: contents;
+}
+
+/* Desktop cinematic: same positioning context + content Y shift */
+body.mode-desktop.is-cinematic #game-viewport {
+    position: relative;
+}
+body.mode-desktop.is-cinematic #cine-frame {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+    transform: translateY(var(--cine-content-y, 0%));
+}
+
+/* Background behind the shifted frame stays black */
+body.mode-desktop.is-cinematic #farm-area {
+    background: #000;
+}
+
+/* Cinematic full-screen: collapse right column, hide shop/header */
+body.mode-desktop.is-cinematic #game-container {
+    grid-template-columns: 1fr 0 !important;
+    gap: 0 !important;
+}
+body.mode-desktop.is-cinematic header,
+body.mode-desktop.is-cinematic #shop {
+    display: none !important;
+}
+body.mode-desktop.is-cinematic #farm-area {
+    justify-content: center !important;
+    align-items: center !important;
+}
+
+
+/* ── Retire stats overlay — misma estructura que pause/ranking ─────────────── */
+#retire-stats-overlay {
+    position: fixed;
+    inset: 0;
+    background: transparent;
+    z-index: 100002;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Cinematic mode / stats screen: hide topbar and all info bubbles */
+body.is-cinematic #topbar,
+body.retire-stats-open #topbar {
+    display: none;
+}
+body.is-cinematic #egg-bubble,
+body.is-cinematic #water-bubble,
+body.is-cinematic #food-bubble,
+body.is-cinematic #flower-bubble {
+    display: none !important;
+}
+
+
+.rs-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 6px;
+    padding: 4px 0;
+    line-height: 1.4;
+}
+
+.rs-player-row {
+    background: rgba(46, 204, 113, 0.12);
+    outline: 1px solid rgba(46, 204, 113, 0.35);
+}
+
+.rs-pos {
+    min-width: 22px;
+    text-align: right;
+}
+
+.rs-badge {
+    font-size: 5px;
+    padding: 1px 4px;
+    color: #fff;
+    white-space: nowrap;
+}
+
+.rs-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rs-time {
+    color: #e67e22;
+    white-space: nowrap;
+}
+
+.rs-sep {
+    border: none;
+    border-top: 1px solid #555;
+    margin: 4px 0;
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   DESKTOP — Shop: réplica exacta del tile-mode portrait
+   ════════════════════════════════════════════════════════════ */
+
+/* ── Grid: farm toma su ancho natural, shop llena el resto ── */
+body.mode-desktop #game-container {
+    grid-template-columns: auto 1fr;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Farm ocupa todo el alto disponible y centra el canvas */
+body.mode-desktop #farm-area {
+    min-height: 0;
+    overflow: hidden;
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ── Modos horizontales: canvas escala proporcional al alto de pantalla ──
+   Sin distorsión: width:auto mantiene el aspect ratio. */
+body.mode-desktop #gameCanvas,
+body.mode-landscape #gameCanvas {
+    display: block;
+    max-height: 100%;
+    max-width: 100%;
+    width: auto;
+    height: auto;
+    min-height: 0;
+    min-width: 0;
+}
+
+/* ── Topbar: h1 en fila propia, resto en segunda fila ── */
+body.mode-desktop #topbar {
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 20px 14px 10px 14px;
+    gap: 26px 8px;
+}
+
+body.mode-desktop #topbar h1 {
+    flex: 0 0 100%;
+    text-align: center;
+    order: 0;
+}
+
+body.mode-desktop #desktop-banner {
+    flex: 0 0 100%;
+    order: 0;
+    height: 50px;
+    display: none;            /* shown by GameAds.showBanner() */
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: transparent;
+}
+
+/* Fuera de CrazyGames no hay SDK que rellene este hueco con un anuncio real
+   (GameAds.showBanner sigue reservando el espacio en todos los desktop), así
+   que en vez de quedar vacío se rellena con el nombre del juego en texto —
+   pedido explícito: el logo de madera (themachinegg_logo.png) quedaba mal
+   encogido en una tira de 50px. Se usa :not(market-crazygames) en vez de
+   listar cada market (galaxy, itchio, newgrounds...) para que cualquier build
+   no-CrazyGames futuro caiga aquí automáticamente. */
+body.mode-desktop:not(.market-crazygames) #desktop-banner::before {
+    content: "YUMURTA FABRİKASI: ÇİFTLİK TYCOON";
+    font-family: 'Press Start 2P', cursive;
+    font-size: 16px;
+    letter-spacing: 1px;
+    color: #fff;
+    text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.55);
+    white-space: nowrap;
+}
+
+body.mode-desktop #topbar #stats-header,
+body.mode-desktop #topbar #money-counter {
+    order: 1;
+    flex: 0 0 auto;
+}
+
+body.mode-desktop #topbar #timer-container {
+    order: -1;
+}
+
+/* ── Desktop topbar-row: fila que nunca hace wrap ── */
+body.mode-desktop #topbar-row {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
+    order: 1;
+    flex: 0 0 100% !important;   /* ocupa todo el ancho del topbar */
+    min-width: 0;
+}
+
+/* Izquierda: gallinas — tamaño natural */
+body.mode-desktop #topbar-row #stats-header {
+    order: 0;
+    flex: 0 0 auto;
+    min-width: 0;
+}
+
+/* Centro: dinero — llena todo el espacio disponible */
+body.mode-desktop #topbar-row #money-counter {
+    order: 0;
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+body.mode-desktop #topbar-row #money-counter .pixel-counter-wrap {
+    width: 100% !important;
+}
+
+body.mode-desktop #topbar-row #stats-header .pixel-counter-wrap,
+body.mode-desktop #topbar-row #money-counter .pixel-counter-wrap {
+    height: clamp(30px, 3.2vw, 48px);
+}
+
+body.mode-desktop #topbar-row .pixel-counter-val {
+    font-size: clamp(11px, 1.3vw, 20px);
+}
+
+body.mode-desktop #topbar-row #ranking-btn,
+body.mode-desktop #topbar-row #pause-btn {
+    width: clamp(30px, 3.2vw, 44px) !important;
+    height: clamp(30px, 3.2vw, 44px) !important;
+}
+
+/* ── Ocultar botones del header que no aplican en desktop ── */
+body.mode-desktop #mute-btn,
+body.mode-desktop #toggle-info-btn {
+    display: none !important;
+}
+
+/* ── shop-info-btn: igual que en portrait ── */
+body.mode-desktop #shop-info-btn {
+    position: absolute;
+    right: -14px;
+    width: 100px;
+    height: 100px !important;
+    top: -24px;
+    background: url('pixelart_design/info.png') center/contain no-repeat;
+    image-rendering: pixelated;
+    border: none;
+    box-shadow: none;
+    background-color: transparent;
+    cursor: var(--cur-finger);
+    padding: 0;
+    z-index: 2;
+}
+body.mode-desktop #shop-info-btn:hover { opacity: 0.85; }
+body.mode-desktop #shop.is-info #shop-info-btn { opacity: 0.6; }
+
+body.mode-desktop #shop {
+    background: none;
+    border: none !important;
+    padding: 0;
+    box-shadow: none;
+    border-radius: 0 !important;
+    overflow: hidden;
+    position: relative;
+    /* #game-container reparte "auto 1fr" entre farm-area y shop — en pantallas
+       muy anchas y bajas (p.ej. la ventana por defecto de Galaxy, 1900×630) el
+       canvas se topa antes con el alto que con el ancho, así que "auto" deja de
+       crecer pronto y el 1fr sobrante entero se lo queda la tienda: pedía verse
+       de más de 1100px de ancho, con hueco vacío debajo porque su contenido no
+       llega a esa anchura. Topada a un máximo razonable.
+       OJO: justify-self debe seguir en "stretch" (el valor por defecto — NO
+       fijarlo a "start"). Con "start" la tienda se encoge a su contenido mínimo
+       en vez de ocupar el hueco disponible, y queda una tira minúscula incluso
+       en anchos normales donde el 1fr real es mucho menor que max-width.
+       max-width por sí solo ya hace el trabajo: deja estirarse hasta el tope
+       como mucho, pero solo encoge por debajo de eso si el hueco real es menor.
+       Este ~600px es solo el valor de respaldo antes de que corra el JS:
+       performDesktopAutoScale() (index.html) sobreescribe max-width en cada
+       llamada con el ancho NATURAL que tendría la tienda en un monitor Full HD
+       (1920×1080, ~587px) — pedido explícito para que en pantalla completa a
+       esa resolución no se vean franjas negras, y que ese sea su tope siempre
+       (en pantallas más anchas/bajas como Galaxy 1900×630 sí puede haber
+       franjas, ver el bloque de centrado de #game-container en index.html).
+    */
+    max-width: 600px;
+}
+
+body.mode-desktop #shop::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border: 22px solid transparent;
+    border-bottom-width: 75px;
+    border-image: url(pixelart_design/BOTTOM.png);
+    background-color: #6b3e75;   /* tapa rayitas 9-slice (interior del sprite) */
+    background-clip: padding-box;
+    border-image-slice: 15 97 26 76 fill;
+    border-image-width: 52px;
+    image-rendering: pixelated;
+    pointer-events: none;
+}
+
+body.mode-desktop #shop > * {
+    position: relative;
+    z-index: 1;
+}
+
+body.mode-desktop #shop-header {  
+    border-bottom: none !important;
+    height: 64px;
+}
+
+body.mode-desktop #shop-header span,
+body.mode-desktop #shop-header h2 {  
+    color: white !important;
+    text-shadow: 0 2px black;
+    font-size: 18px !important;
+    margin: 0 2px !important;
+}
+
+body.mode-desktop #shop-header span {
+    font-size: 12px !important;
+}
+
+/* Aviso "hay una mejora comprable fuera de la vista" — pedido explícito de
+   CrazyGames en review. Mismo elemento/clases que portrait (#shop-scroll-hint,
+   ver portrait.css), reutilizando sus @keyframes shop-hint-bounce-y (siempre
+   cargadas: portrait.css se enlaza sin condición en index.html). La tienda de
+   desktop nunca colapsa (siempre cuadrícula vertical), así que solo hace
+   falta la variante "dir-down" (flecha abajo).
+   OJO: igual que portrait, este bloque va DESPUÉS de "body.mode-desktop
+   #shop > *" (arriba) a propósito — misma especificidad, gana el orden en
+   el archivo; puesto antes, position:absolute nunca se aplicaría. */
+body.mode-desktop #shop-scroll-hint {
+    display: none;
+    position: absolute;
+    z-index: 60;
+    pointer-events: none;
+}
+body.mode-desktop #shop-scroll-hint.visible {
+    display: block;
+}
+body.mode-desktop #shop-scroll-hint .shop-scroll-hint-arrow {
+    display: block;
+    width: 0;
+    height: 0;
+    filter: drop-shadow(0 0 6px rgba(255, 180, 0, 0.9));
+}
+body.mode-desktop #shop-scroll-hint.dir-down {
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    animation: shop-hint-bounce-y 1s ease-in-out infinite;
+}
+body.mode-desktop #shop-scroll-hint.dir-down .shop-scroll-hint-arrow {
+    border-left: 9px solid transparent;
+    border-right: 9px solid transparent;
+    border-top: 12px solid #ffb300;
+}
+
+/* ── Scroll: grid 3 columnas ── */
+body.mode-desktop #shop-scroll {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    padding: 8px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    align-items: start;
+    align-content: start;
+}
+
+body.mode-desktop #shop-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+body.mode-desktop .shop-group-header {
+    grid-column: 1 / -1;
+    font-size: 10px !important;
+    color: #ffffff;
+    text-shadow: 0px 2px 0px rgb(0 0 0 / 65%);
+    padding: 4px 6px;
+    text-align: center;
+    border: 5px solid transparent;
+    border-image: url('pixelart_design/panel_purple_small.png') 5 fill / 5px / 0 stretch;
+    background-color: #45293f;   /* tapa rayitas 9-slice (interior del sprite) */
+    background-clip: padding-box;
+    image-rendering: pixelated;
+    margin-bottom: 2px;
+}
+
+/* Wrapper de botones */
+body.mode-desktop .shop-btn-wrapper {
+    width: 100%;
+    height: 108px;
+    position: relative;
+}
+
+/* shop-btn-row (ads) ocupa las 3 columnas */
+body.mode-desktop .shop-btn-row {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+    height: auto;
+    margin-bottom: 0;
+    flex-direction: unset;
+}
+
+body.mode-desktop .shop-btn-row .shop-btn,
+body.mode-desktop .shop-btn-row .free-ad-btn {
+    width: 100%;
+    height: 108px;
+}
+
+body.mode-desktop #shop-scroll > .shop-btn {
+    width: 100%;
+    height: 108px;
+}
+
+/* ── Botón: 9-slice nodesc ── */
+body.mode-desktop .shop-btn {
+    background: none;
+    box-shadow: none;
+    border: 5px solid transparent;
+    border-image: url('pixelart_design/shop_item_nodesc.png') 16 fill / 24px / 0 stretch;
+    background-color: #ed8099;   /* tapa rayitas 9-slice (interior del sprite) */
+    background-clip: padding-box;
+    image-rendering: pixelated;
+    padding: 0;
+    display: block;
+    color: #1a0820;
+    text-shadow: none;
+    border-radius: 0 !important;
+    transition: filter 0.08s ease;
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+}
+
+body.mode-desktop .shop-btn:hover:not(:disabled) {
+    filter: none;
+    background: none !important;
+    transform: translateY(-2px);
+    box-shadow: none !important;
+}
+
+body.mode-desktop .shop-btn:active {
+    filter: none;
+    transform: translateY(1px);
+}
+
+body.mode-desktop .shop-btn:disabled {
+    opacity: 0.45;
+    filter: grayscale(60%);
+}
+
+/* ── Retire: gold border ── */
+body.mode-desktop #buy-retire {
+    border: 5px solid transparent;
+    border-image: url('pixelart_design/shop_item_gold_nodesc.png') 16 fill / 24px / 0 stretch;
+    /* El `background: none !important` de abajo resetea color Y clip, así que el fix va
+       DESPUÉS y con !important para ganarle. */
+    background: none !important;
+    background-color: #ffb72b !important;   /* tapa rayitas 9-slice (interior del sprite) */
+    background-clip: padding-box !important;
+    box-shadow: none !important;
+    color: #19633d;
+}
+
+body.mode-desktop #buy-retire::before {
+    width: 90px !important;
+    height: 34px !important;
+    background-size: 565px 131px !important;
+
+    left: 50% !important;
+    width: 72px !important;
+    background-size: 560px 131px !important;
+}
+
+body.mode-desktop  #shop.is-info #buy-retire::before {
+    left: 0 !important;
+}
+
+body.mode-desktop #shop.is-info #buy-retire .btn-title {
+    padding-left: 12px;
+}
+
+/* ── Icono via ::before ── */
+body.mode-desktop .shop-btn::before {
+    content: '';
+    position: absolute;
+    top: 4px;
+    left: 54%;
+    transform: translateX(-50%);
+    /*width: 80px;*/
+    width: 70px;
+    height: 33px;
+    background-image: url('pixelart_design/shop_icons.png');
+    /*background-size: 560px 132px;*/
+    background-size: 553px 132px;
+    background-position: var(--si, -999px 0);
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+}
+
+/* ── First-chicken: green border ── */
+body.mode-desktop .shop-btn.first-chicken {
+    border-image: url('pixelart_design/shop_item_green.png') 5 fill / 7px / 0 stretch;
+    background-color: #5dca93;   /* tapa rayitas 9-slice (interior del sprite) */
+    background-clip: padding-box;
+}
+
+body.mode-desktop .shop-btn.first-chicken::before {
+    background-image: url('pixelart_design/shop_icons_green.png');
+}
+
+body.mode-desktop .shop-btn.first-chicken .btn-title {
+    color: #19633d;
+}
+
+/* ── free-ad-mode: green sprites ── */
+body.mode-desktop .shop-btn.free-ad-mode {
+    border-image: url('pixelart_design/shop_item_green_nodesc.png') 16 fill / 24px / 0 stretch;
+    background-color: #5dca93;   /* tapa rayitas 9-slice (interior del sprite) */
+    background-clip: padding-box;
+}
+
+body.mode-desktop .shop-btn.free-ad-mode::before {
+    background-image: url('pixelart_design/shop_icons_green.png');
+}
+
+body.mode-desktop .shop-btn.free-ad-mode .btn-title {
+    color: #19633d;
+}
+
+/* ── Título ── */
+body.mode-desktop .shop-btn .btn-title {
+    position: absolute;
+    top: 30px;
+    left: 0;
+    right: 0;
+    height: 33px;
+    grid-area: unset;
+    font-size: 6.5px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 2px;
+    overflow: hidden;
+    color: #7a3045;
+}
+
+/* ── Nivel ── */
+body.mode-desktop .shop-btn > .lv-corner {
+    position: absolute;
+    bottom: 18px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 5px;
+    color: white;
+}
+
+body.mode-desktop .shop-btn > .lv-corner:empty {
+    display: none !important;
+}
+
+/* ── Precio ── */
+body.mode-desktop .shop-btn .btn-price {
+    position: absolute;
+    bottom: 4px;
+    left: 0;
+    right: 0;
+    height: 22px;
+    grid-area: unset;
+    margin-top: 0;
+    color: white;
+    font-size: 7px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 17px;
+    padding-top: 2px !important;
+    font-size: 9px !important;
+}
+
+body.mode-desktop .shop-btn:has(> .lv-corner:empty) .btn-price {
+    bottom: 0;
+    height: 46px;
+}
+
+/* ── upg-info: oculto ── */
+body.mode-desktop .shop-btn > .upg-info {
+    display: none !important;
+}
+
+body.mode-desktop .shop-icon {
+    display: none !important;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DESKTOP — Modo Info (is-info): réplica de portrait is-expanded.is-info
+   ══════════════════════════════════════════════════════════════ */
+
+/* Scroll: columna única */
+body.mode-desktop #shop.is-info #shop-scroll {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+    align-content: start;
+    padding: 6px 8px 50px;
+}
+
+/* Shop-btn-wrapper y rows: altura automática */
+body.mode-desktop #shop.is-info .shop-btn-wrapper,
+body.mode-desktop #shop.is-info #shop-scroll > .shop-btn,
+body.mode-desktop #shop.is-info .shop-btn-row {
+    height: auto;
+}
+
+/* shop-btn-row pasa a 1 columna también */
+body.mode-desktop #shop.is-info .shop-btn-row {
+    grid-template-columns: 1fr;
+}
+
+/* Botón: grid icono | texto (idéntico a portrait info mode) */
+body.mode-desktop #shop.is-info .shop-btn {
+    width: 100%;
+    height: auto;
+    display: grid;
+    grid-template-columns: 74px 1fr;
+    grid-template-rows: auto auto auto;
+    grid-template-areas:
+        "icon  title"
+        "icon  desc"
+        "level bottom";
+    gap: 0;
+    overflow: visible;
+    padding: 6px 8px 6px 0;
+    position: relative;
+    min-height: 80px;
+    border-image: url('pixelart_design/shop_item.png') 16 fill / 24px / 0 stretch;
+    background-color: #ed8099;   /* tapa rayitas 9-slice (interior del sprite) */
+    background-clip: padding-box;
+}
+
+/* Icono: columna izquierda, centrado verticalmente */
+body.mode-desktop #shop.is-info .shop-btn::before {
+    grid-area: icon;
+    grid-row: 1 / 3;
+    position: absolute;
+    top: 50%; left: 0; right: auto;
+    transform: translateY(-50%);
+    width: 70px;
+    height: 35px;
+    background-size: 560px 132px;
+    align-self: center;
+    justify-self: center;
+}
+
+/* Título */
+body.mode-desktop #shop.is-info .shop-btn .btn-title {
+    grid-area: title;
+    position: static;
+    top: auto; left: auto; right: auto;
+    width: auto; height: auto;
+    font-size: 8px !important;
+    text-align: left;
+    padding: 2px 0 0;
+    display: block;
+    overflow: visible;
+    color: #7a3045;
+    align-self: end;
+}
+
+/* Descripción via ::after */
+body.mode-desktop #shop.is-info .shop-btn::after {
+    content: attr(data-title);
+    grid-area: desc;
+    position: static;
+    font-size: 6.5px;
+    color: #7a3045;
+    font-family: 'Press Start 2P', monospace;
+    line-height: 1.6;
+    padding: 3px 0 2px;
+    text-align: left;
+}
+
+/* upg-info visible en info mode */
+body.mode-desktop #shop.is-info .shop-btn > .upg-info {
+    grid-area: bottom;
+    display: block !important;
+    position: static;
+    font-size: 5px;
+    color: #5a3060;
+    align-self: center;
+    padding: 0;
+}
+
+/* Precio */
+body.mode-desktop #shop.is-info .shop-btn .btn-price {
+    grid-area: bottom;
+    position: static;
+    bottom: auto; right: auto; left: auto;
+    width: auto; height: auto;
+    font-size: 9px !important;
+    text-align: right;
+    justify-self: end;
+    align-self: end;
+    padding: 0;
+    color: #FFFFFF;
+    display: block;
+    min-height: unset;
+}
+
+/* lv-corner: columna izquierda fila 3 */
+body.mode-desktop #shop.is-info .shop-btn > .lv-corner {
+    display: block !important;
+    grid-area: level;
+    position: static;
+    bottom: auto; left: auto; right: auto;
+    width: auto; height: 20px;
+    font-size: 9px !important;
+    align-self: end;
+    justify-self: center;
+    color: white !important;
+    text-align: center;
+}
+
+/* first-chicken */
+body.mode-desktop #shop.is-info .shop-btn.first-chicken {
+    border-image: url('pixelart_design/shop_item_green.png') 16 fill / 24px / 0 stretch;
+    background-color: #5dca93;   /* tapa rayitas 9-slice (interior del sprite) */
+    background-clip: padding-box;
+}
+body.mode-desktop #shop.is-info .shop-btn.first-chicken .btn-title,
+body.mode-desktop #shop.is-info .shop-btn.first-chicken::after {
+    color: #19633d;
+}
+
+/* free-ad-mode */
+body.mode-desktop #shop.is-info .shop-btn.free-ad-mode {
+    border-image: url('pixelart_design/shop_item_green.png') 16 fill / 24px / 0 stretch;
+    background-color: #5dca93;   /* tapa rayitas 9-slice (interior del sprite) */
+    background-clip: padding-box;
+}
+body.mode-desktop #shop.is-info .shop-btn.free-ad-mode .btn-title,
+body.mode-desktop #shop.is-info .shop-btn.free-ad-mode::after {
+    color: #19633d;
+}
+
+/* buy-retire gold en info */
+body.mode-desktop #shop.is-info #buy-retire {
+    border-image: url('pixelart_design/shop_item_gold.png') 16 fill / 24px / 0 stretch;
+    background-color: #ffb72b;   /* tapa rayitas 9-slice (interior del sprite) */
+    background-clip: padding-box;
+}
+
+/* Group headers: visibles en info, una sola columna */
+body.mode-desktop #shop.is-info .shop-group-header {
+    grid-column: 1;
+}
+
+/* ── Iconos — mismos offsets que portrait ── */
+/* Fila 0 */
+body.mode-desktop #buy-chicken      { --si:   -4px    0px; }
+body.mode-desktop #buy-rooster      { --si:  -84px    0px; }
+body.mode-desktop #buy-growth       { --si: -164px    0px; }
+body.mode-desktop #buy-petting      { --si: -244px    0px; }
+body.mode-desktop #buy-diet         { --si: -324px    0px; }
+body.mode-desktop #buy-batch        { --si: -404px    0px; }
+body.mode-desktop #buy-music        { --si: -484px    0px; }
+/* Fila 1 */
+body.mode-desktop #buy-maxfood      { --si:   -4px  -32px; }
+body.mode-desktop #buy-maxwater     { --si:  -84px  -32px; }
+body.mode-desktop #buy-refill       { --si: -164px  -32px; }
+body.mode-desktop #buy-autofood     { --si: -244px  -32px; }
+body.mode-desktop #buy-autowater    { --si: -324px  -32px; }
+body.mode-desktop #buy-basevalue    { --si: -404px  -32px; }
+body.mode-desktop #buy-premium      { --si: -484px  -32px; }
+/* Fila 2 */
+body.mode-desktop #buy-golden       { --si:   -4px  -65px; }
+body.mode-desktop #buy-magnet       { --si:  -84px  -65px; }
+body.mode-desktop #buy-autocollect  { --si: -164px  -65px; }
+body.mode-desktop #buy-autosell     { --si: -244px  -65px; }
+body.mode-desktop #buy-washer       { --si: -324px  -65px; }
+body.mode-desktop #buy-stamper      { --si: -404px  -65px; }
+body.mode-desktop #buy-packager     { --si: -484px  -65px; }
+/* Fila 3 */
+body.mode-desktop #buy-ribbon       { --si:   -4px  -98px; }
+body.mode-desktop #buy-tvAd         { --si:  -84px  -98px; }
+body.mode-desktop #buy-megachicken  { --si: -164px  -98px; }
+body.mode-desktop #buy-gallinapro   { --si: -244px  -98px; }
+body.mode-desktop #buy-chickengold  { --si: -324px  -98px; }
+body.mode-desktop #buy-chickengreen { --si: -404px  -98px; }
+body.mode-desktop #buy-retire       { --si: -484px  -98px; }
+body.mode-desktop #buy-autofood-amt  { --si: -244px  -32px; }
+body.mode-desktop #buy-autowater-amt { --si: -324px  -32px; }
+body.mode-desktop #buy-sorter        { --si: -164px  -65px; }
+/* Sin icono propio en el sprite del shop — reutiliza el de Green (fila 3 ya
+   completa, 7/7 columnas) hasta que haya un icono dedicado para Purple. */
+body.mode-desktop #buy-chickenpurple { --si: -404px  -98px; }
+
+/* ── 9-slice: money_count.png — solo estira los ~8px centrales ── */
+/* Slices: 44px izq + 44px der (sobre 96px fuente) = 8px centro */
+body.mode-portrait #money-counter .pixel-counter-bg,
+body.mode-desktop #money-counter .pixel-counter-bg,
+body.mode-landscape #money-counter .pixel-counter-bg {
+    display: none !important;
+}
+
+body.mode-desktop #money-counter .pixel-counter-wrap {
+    border-width: 0 88px 0 88px !important;
+    border-style: solid !important;
+    border-color: transparent !important;
+    border-image: url('pixelart_design/money_count.png') 0 44 0 44 fill stretch !important;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    min-width: 176px !important;
+}
+body.mode-desktop #money-counter .pixel-counter-val {
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+}
+
+body.mode-landscape #money-counter .pixel-counter-wrap {
+    border-width: 0 49px 0 49px !important;
+    border-style: solid !important;
+    border-color: transparent !important;
+    border-image: url('pixelart_design/money_count.png') 0 44 0 44 fill stretch !important;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    min-width: 180px !important;
+}
+body.mode-landscape #money-counter .pixel-counter-val {
+    left: 53px !important;
+}
+body.mode-desktop #buy-sortbonus     { --si: -404px  -32px; }
+
+/* ── Botones sprite 9-slice ────────────────────────────────── */
+.btn-sprite {
+    border-width: 12px !important;
+    border-style: solid !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    /* Ver la nota de "RAYITAS DE LOS 9-SLICE" más abajo. Cada .btn-* pinta debajo su
+       color interior; el padding-box evita que ese color invada las esquinas
+       transparentes del sprite. El shorthand `background` de arriba resetea el clip,
+       por eso este longhand va DESPUÉS. */
+    background-clip: padding-box !important;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    color: white !important;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.6) !important;
+}
+/* Colores sacados del píxel central de cada PNG.
+   EXPERIMENTO "rayitas" (stretch → round) revertido: no solucionó las rendijas. */
+.btn-green  { border-image: url('pixelart_design/btn_1.png') 5 5 5 5 fill stretch !important; background-color: #1ebc73 !important; }
+.btn-red    { border-image: url('pixelart_design/btn_2.png') 5 5 5 5 fill stretch !important; background-color: #e83b3b !important; }
+.btn-blue   { border-image: url('pixelart_design/btn_3.png') 5 5 5 5 fill stretch !important; background-color: #4d9be6 !important; }
+.btn-orange { border-image: url('pixelart_design/btn_4.png') 5 5 5 5 fill stretch !important; background-color: #e17001 !important; }
+.btn-5      { border-image: url('pixelart_design/btn_5.png') 5 5 5 5 fill stretch !important; background-color: #9d834e !important; }
+
+/* ── Contador de tiempo (solo Speedrun) — mismo sistema 9-slice que .btn-sprite ── */
+.speedrun-counter {
+    border-width: 8px;
+    border-style: solid;
+    border-color: transparent;
+    box-shadow: none;
+    background-color: #1a5c47; /* aprox. color interior de contador.png — ajusta si no encaja */
+    background-clip: padding-box;
+    border-image: url('pixelart_design/contador.png') 5 5 5 5 fill stretch;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+#speedrun-counter-text {
+    display: inline-block; /* los transform (translateY del offset Y) no aplican en inline */
+    font-family: 'Press Start 2P', monospace;
+    color: #2dff9d;
+    text-align: center;
+    white-space: nowrap;
+    line-height: 1;
+}
+
+@keyframes overlay-blur-in {
+    from { opacity: 0; backdrop-filter: blur(0px);  -webkit-backdrop-filter: blur(0px); }
+    to   { opacity: 1; backdrop-filter: blur(8px);  -webkit-backdrop-filter: blur(8px); }
+}
+
+@keyframes overlay-blur-out {
+    from { opacity: 1; backdrop-filter: blur(8px);  -webkit-backdrop-filter: blur(8px); }
+    to   { opacity: 0; backdrop-filter: blur(0px);  -webkit-backdrop-filter: blur(0px); }
+}
+
+@keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+body.in-game #pause-overlay,
+body.in-game #ranking-overlay,
+body.in-game #endless-ranking-overlay,
+body.in-game #retire-stats-overlay {
+    animation: overlay-blur-in 0.15s ease forwards;
+}
+
+body.in-game #pause-overlay.overlay-closing,
+body.in-game #ranking-overlay.overlay-closing,
+body.in-game #endless-ranking-overlay.overlay-closing,
+body.in-game #retire-stats-overlay.overlay-closing {
+    animation: overlay-blur-out 0.15s ease forwards;
+}
+
+
+/* ── Paneles 9-slice ─────────────────────────────────────────── */
+#ranking-overlay > div,
+#endless-ranking-overlay > div,
+#retire-stats-overlay > div {
+    border-style: solid !important;
+    border-color: transparent !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+/* ── RAYITAS DE LOS 9-SLICE ───────────────────────────────────────────────────
+   Las "rayitas" que se ven a veces en paneles y botones son huecos de menos de 1px
+   en las junturas del border-image: cuando el elemento mide una fracción de píxel
+   (94vw, clamp(), transform: scale()...), el navegador redondea los cortes del
+   sprite y deja una rendija. Con `background: transparent` se veía la escena de
+   detrás por esa rendija → rayita.
+
+   ARREGLO: pintar debajo el color INTERIOR del propio sprite, para que la rendija
+   muestre ese color y sea invisible.
+
+   OJO — los sprites tienen las ESQUINAS TRANSPARENTES (silueta redondeada), así que
+   un background normal pintaría un rectángulo por fuera de la forma. Por eso va con
+   `background-clip: padding-box`: rellena solo el INTERIOR, sin invadir el área del
+   borde. Los colores están sacados del píxel central de cada PNG.
+
+   NOTA: esto OCULTA la rendija, no elimina el redondeo subpíxel (que depende de cómo
+   rasteriza el navegador y no se puede controlar del todo con tamaños responsive).
+   ─────────────────────────────────────────────────────────────────────────────── */
+
+/* panel unificado: pause + ranking + endless ranking + confirmación de borrado */
+#pause-overlay > div,
+#ranking-overlay > div,
+#endless-ranking-overlay > div,
+#wipe-confirm-overlay > div {
+    border-style: solid !important;
+    border-width: 18px 35px 32px 35px !important;
+    border-image: url('pixelart_design/themachinegg_panel.png') 17 35 32 35 fill / 56px 86px 77px 86px stretch round !important;
+    border-radius: 0 !important;
+    background-color: #9e4539 !important;   /* interior de themachinegg_panel.png */
+    background-clip: padding-box !important;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+/* panel_1 (marrón cálido) → stats de retiro */
+#retire-stats-overlay > div {
+    border-width: 36px !important;
+    border-top-width: 28px !important;
+    padding-top: 0 !important;
+    border-image: url(pixelart_design/panel_1.png) 18 5 5 5 fill stretch !important;
+    border-image-width: 80px 20px 22px 20px !important;
+    background-color: #e6904e !important;   /* interior de panel_1.png */
+    background-clip: padding-box !important;
+}
+
+#ranking-overlay h2 {
+    color: white !important;
+}
+
+#ranking-overlay #ranking-list {
+    margin-top: 0 !important;
+    overflow-y: scroll !important;
+    scrollbar-color: #5a3820 #1a0f0a !important;
+    background: rgb(26 15 10 / 55%) !important;
+    border: none !important;
+}
+#ranking-overlay #ranking-list::-webkit-scrollbar {
+    width: 8px !important;
+}
+#ranking-overlay #ranking-list::-webkit-scrollbar-track {
+    background: #1a0f0a !important;
+}
+#ranking-overlay #ranking-list::-webkit-scrollbar-thumb {
+    background: #5a3820 !important;
+    border-radius: 3px !important;
+}
+#ranking-overlay #ranking-list::-webkit-scrollbar-thumb:hover {
+    background: #7a5030 !important;
+}
+
+/* ── pause-overlay: layout ──────────────────────────────────────── */
+#pause-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: transparent;
+    z-index: 100000;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+#pause-panel {
+    position: relative;
+    width: 420px;
+    max-width: 96vw;
+    max-height: 90vh;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+#pause-panel-title {
+    position: absolute;
+    top: 2px; left: 0; right: 0;
+    text-align: center;
+    pointer-events: none;
+}
+#pause-panel-title span {
+    color: #f1c40f;
+    font-size: 20px;
+    font-family: 'Press Start 2P', monospace;
+    text-shadow: 2px 2px black;
+}
+#pause-panel-content {
+    padding: 60px 0 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    align-items: center;
+    overflow-y: auto;
+    flex: 1;
+    box-sizing: border-box;
+    overflow: unset;
+}
+/* sub-panels — display toggled by JS, flex layout from CSS */
+#pause-main, #pause-settings, #pause-logros {
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    align-items: flex-start;
+}
+#pause-main { gap: 12px; align-items: center; }
+/* buttons */
+#resume-btn { font-size: 16px; padding: 15px 30px; width: 100%; }
+#pause-to-settings,
+#pause-to-logros,
+#pause-salir-btn,
+#pause-logros-back { font-size: 13px; padding: 13px; width: 100%; }
+#pause-main a {
+    color: #bdc3c7;
+    font-size: 7px;
+    font-family: 'Press Start 2P', monospace;
+    text-decoration: underline;
+    opacity: 0.7;
+    text-align: center;
+}
+/* ajustes sub-panel */
+.pause-section-label {
+    color: #ffffff;
+    font-size: 14px;
+    text-align: center;
+    width: 100%;
+    font-family: 'Press Start 2P', monospace;
+    text-shadow: 2px 2px black;
+}
+#language-grid {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+}
+.lang-btn {
+    padding: 8px 0;
+    font-size: 12px;
+    flex: 0 0 calc(20% - 6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    color: white;
+}
+#translator-panel {
+    background: rgba(0,0,0,0.5);
+    border-radius: 4px;
+    padding: 8px;
+    box-sizing: border-box;
+    text-align: center;
+    border: 2px dashed #95a5a6;
+    width: 100%;
+}
+#trans-author { color: #f1c40f; font-size: 9px; line-height: 1.4; }
+.pause-reddit-row { text-align: center; width: 100%; }
+.pause-reddit-row a { color: #bdc3c7; font-size: 7px; text-decoration: underline; opacity: 0.8; }
+#pause-mute-proxy,
+#pause-privacy-btn,
+#pause-settings-back {
+    font-size: 11px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    min-height: 52px !important;
+    height: 52px !important;
+    padding: 0 12px !important;
+    margin: 0 !important;
+}
+/* logros sub-panel */
+#achievements-panel {
+    width: 100%;
+    border-radius: 4px;
+    padding: 8px 10px;
+    box-sizing: border-box;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+.ach-header {
+    color: #ffffff;
+    font-size: 14px !important;
+    font-family: 'Press Start 2P', monospace;
+    margin-bottom: 8px;
+    text-align: center;
+    text-shadow: 2px 2px black;
+}
+#ach-count { color: #bdc3c7; }
+#ach-list { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.ach-item {
+    position: relative;
+    overflow: hidden;
+    padding: 5px 6px;
+    font-size: 6px;
+    font-family: 'Press Start 2P', monospace;
+    color: #fff;
+    border: 3px solid;
+    cursor: var(--cur-hand);
+    text-align: center;
+    box-sizing: border-box;
+    line-height: 1.4;
+    word-break: break-word;
+}
+.ach-item--done   {     padding: 8px;
+    font-size: 10px; background: #e67e22; border-color: #fff #a04000 #a04000 #fff; }
+.ach-item--locked {     padding: 8px;
+    font-size: 10px;background: #2e2e2e; border-color: #4a4a4a #1a1a1a #1a1a1a #4a4a4a; color: #777; }
+.ach-item-fill {
+    position: absolute;
+    left: 0; top: 0;
+    height: 100%;
+    background: linear-gradient(to right, #7a3500, #c05a00);
+    pointer-events: none;
+}
+.ach-item-label { position: relative; z-index: 1; }
+
+body.mode-desktop #buy-box           { --si: -484px  -65px; }
+
+/* ── Chicken name toasts ─────────────────────────────────────── */
+#chicken-toast-container {
+    position: fixed;
+    bottom: 80px;
+    left: 16px;
+    z-index: 99000;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 6px;
+    pointer-events: none;
+    max-width: 220px;
+}
+.chicken-toast {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(30, 20, 10, 0.88);
+    border: 2px solid #c8a028;
+    border-radius: 10px;
+    padding: 7px 12px 7px 8px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: #fff5d0;
+    line-height: 1.5;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.5);
+    animation: chickenToastIn 0.2s ease-out, chickenToastOut 0.4s ease-in 2.2s forwards;
+    white-space: nowrap;
+}
+.chicken-toast .ct-icon { font-size: 14px; flex-shrink: 0; }
+.chicken-toast .ct-label { color: #aaa; font-size: 6px; }
+.chicken-toast .ct-name  { color: #ffd84d; }
+@keyframes chickenToastIn {
+    from { opacity: 0; transform: translateX(-16px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes chickenToastOut {
+    from { opacity: 1; }
+    to   { opacity: 0; transform: translateX(-12px); }
+}
+
+/* ── #eb-active pills en desktop (igual que portrait) ───────────────────── */
+body.mode-desktop #eb-active {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+    padding: 2px 11px;
+    height: 28px;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex-shrink: 0;
+    font-size: 7px !important;
+}
+body.mode-desktop #eb-active::-webkit-scrollbar { display: none; }
+body.mode-desktop .eb-pill {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 5px;
+    padding: 1px 5px;
+    height: 16px;
+    border: 3px solid transparent;
+    border-image: url('pixelart_design/btn_3.png') 5 fill / 7px / 2 stretch;
+    background-color: #4d9be6;   /* tapa rayitas 9-slice (interior del sprite) */
+    background-clip: padding-box;
+    image-rendering: pixelated;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+body.mode-desktop .eb-pill-name {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px !important;
+    color: #ffffff;
+}
+body.mode-desktop .eb-pill-time {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px !important;
+    color: #f1c40f;
+}
+
+/* ── Community badge in ranking tables — tooltip sin delay ─────────────── */
+.rank-com-badge {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: var(--cur-hand);
+    box-sizing: border-box;
+}
+.rank-com-badge::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a0f0a;
+    color: #fff;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px;
+    padding: 3px 7px;
+    white-space: nowrap;
+    border-radius: 3px;
+    border: 1px solid #555;
+    pointer-events: none;
+    opacity: 0;
+    z-index: 9999;
+    transition: opacity 0s;   /* sin delay */
+}
+.rank-com-badge:hover::after {
+    opacity: 1;
+}
+
+/* ── #eb-offer banner horizontal en desktop (igual que portrait) ─────────── */
+body.mode-desktop #eb-offer {
+    width: 100%;
+    box-sizing: border-box;
+    height: 55px;
+    display: none;
+    grid-template-columns: auto 1fr auto auto;
+    grid-template-rows: 1fr 1fr;
+    grid-template-areas: "gift title reject accept" "gift dur reject accept";
+    align-items: center;
+    gap: 1px 8px;
+    padding: 5px 14px;
+    background: #fdcbb0;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: #e0c0ff;
+    pointer-events: auto;
+    border: none;
+    border-image: none !important;
+    box-shadow: none;
+    margin-top: 4px;
+}
+body.mode-desktop #eb-offer #eb-gift {
+    grid-area: gift;
+    grid-row: 1 / 3;
+    align-self: center;
+    width: 36px;
+    height: 37px;
+    background: url('pixelart_design/gift_icon.png') no-repeat center / contain;
+    image-rendering: pixelated;
+    display: block;
+    flex-shrink: 0;
+    font-size: 0;
+}
+body.mode-desktop #eb-offer #eb-title {
+    grid-area: title;
+    color: #6b3e75;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 10px !important;
+    font-family: 'Press Start 2P', monospace;
+}
+body.mode-desktop #eb-offer #eb-dur {
+    grid-area: dur;
+    color: white;
+    white-space: nowrap;
+    align-self: start;
+    font-size: 9px !important;
+    display: inline-block;
+    border: 5px solid transparent;
+    border-image: url('pixelart_design/panel_brown_small.png') 5 fill / 5px / 0 stretch;
+    background-color: #cd683d;   /* tapa rayitas 9-slice (interior del sprite) */
+    background-clip: padding-box;
+    padding: 1px 4px;
+    width: fit-content;
+}
+body.mode-desktop #eb-offer #eb-reject {
+    grid-area: reject;
+    grid-row: 1 / 3;
+    align-self: stretch;
+    border: 5px solid transparent;
+    border-image: url('pixelart_design/panel_brown_small.png') 5 fill / 5px / 0 stretch;
+    padding: 4px 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    /* El `background: none` resetea color Y clip, así que el fix va DESPUÉS. */
+    background: none;
+    background-color: #cd683d;   /* tapa rayitas 9-slice (interior del sprite) */
+    background-clip: padding-box;
+    cursor: var(--cur-finger);
+}
+body.mode-desktop #eb-offer #eb-reject::before {
+    content: '';
+    width: 15px;
+    height: 15px;
+    background: url('pixelart_design/cancel.png') no-repeat center / contain;
+    image-rendering: pixelated;
+    display: block;
+    flex-shrink: 0;
+}
+body.mode-desktop #eb-offer #eb-reject #eb-reject-label { display: none; }
+body.mode-desktop #eb-offer #eb-reject #eb-cd {
+    color: #ffffffba;
+    font-size: 8px !important;
+    white-space: nowrap;
+    margin-bottom: -4px !important;
+}
+body.mode-desktop #eb-offer #eb-accept {
+    grid-area: accept;
+    grid-row: 1 / 3;
+    align-self: stretch;
+    border: 5px solid transparent;
+    border-image: url('pixelart_design/panel_green_small.png') 5 fill / 5px / 0 stretch;
+    background: none;
+    padding: 2px 6px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    text-align: center;
+    cursor: var(--cur-finger);
+}
+body.mode-desktop #eb-offer #eb-accept #eb-accept-label { display: none; }
+body.mode-desktop #eb-offer #eb-accept::before {
+    content: '';
+    width: 32px;
+    height: 32px;
+    background: url('pixelart_design/watchad.png') no-repeat center / contain;
+    image-rendering: pixelated;
+    display: block;
+    flex-shrink: 0;
+}
