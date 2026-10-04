@@ -2365,6 +2365,7 @@
         }
 
         _tickEndlessBoosts(dt);
+        if (window.FarmOffers && window._farmCtx) window.FarmOffers.tick(dt);
         window.GameAudio.tickPioRateLimit(dt);
 
         const _mL = state.musicLevel || 0;
