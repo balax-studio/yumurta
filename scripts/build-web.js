@@ -15,7 +15,6 @@ const itemsToCopy = [
   'layout.js',
   'intro-layout.js',
   'privacy.html',
-  'PrivacyInfo.xcprivacy',
   'Names.csv',
   'audio',
   'shared',
