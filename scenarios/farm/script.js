@@ -13039,7 +13039,7 @@
         makeBtn('+1.000 💰', function() { state.money += 1000; updateUI(); });
         makeBtn('+1.000.000 💰', function() { state.money += 1000000; updateUI(); });
         makeBtn('+10.000.000 💰', function() { state.money += 10000000; updateUI(); });
-        makeBtn('+1.000.000.000 💰', function() { state.money += 1000000000; updateUI(); });
+        makeBtn('+1B 💰', function() { state.money += 1000000000; updateUI(); });
         makeBtn('GALLINA GRATIS 🐔', function() {
             const c = _registerNewChicken(createChicken(false, null, true));
             chickensArr.push(c);
