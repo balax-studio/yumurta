@@ -13497,8 +13497,8 @@
                     }
                 </style>
                 <div style="font-size:52px;display:inline-block;animation:rotateHint 2s ease-in-out infinite">📱</div>
-                <div style="font-size:12px;line-height:2;text-shadow:2px 2px 0 #d35400">ROTA EL DISPOSITIVO</div>
-                <div style="font-size:7px;color:#ccc;line-height:2">Este juego funciona<br>en modo horizontal</div>
+                <div id="rotate-hint-title" style="font-size:12px;line-height:2;text-shadow:2px 2px 0 #d35400" data-i18n="rotateDevice">CİHAZI DÖNDÜRÜN</div>
+                <div id="rotate-hint-desc" style="font-size:7px;color:#ccc;line-height:2" data-i18n="rotateDeviceDesc">Bu oyun yatay modda<br>çalışmaktadır</div>
             `;
             document.body.appendChild(overlay);
         }
@@ -13513,6 +13513,10 @@
             }
             const isPortrait = window.innerWidth <= 950 && window.innerHeight >= window.innerWidth;
             if (isPortrait) {
+                const titleEl = document.getElementById('rotate-hint-title');
+                const descEl = document.getElementById('rotate-hint-desc');
+                if (titleEl) titleEl.textContent = (window.t ? window.t('rotateDevice') : 'CİHAZI DÖNDÜRÜN');
+                if (descEl) descEl.innerHTML = (window.t ? window.t('rotateDeviceDesc') : 'Bu oyun yatay modda<br>çalışmaktadır');
                 window.isOrientationPaused = true;
                 overlay.style.display = 'flex';
                 if (!window.isMusicMuted && !bgmTheme.paused) bgmTheme.pause();

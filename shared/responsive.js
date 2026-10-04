@@ -18,7 +18,7 @@ window.GAME_MODE = (() => {
     // nivel de Android (android:screenOrientation="portrait" en el manifest),
     // así que screen.width/height son fiables desde el primer frame y no
     // dependen de que el WebView termine de asentar sus insets.
-    const _isNativeStore = (window.GAME_MARKET === ['google', 'play'].join('') || window.GAME_MARKET === 'appstore' || !!window.Capacitor?.isNativePlatform?.());
+    const _isNativeStore = !!window.Capacitor?.isNativePlatform?.();
     const w = (_isNativeStore ? screen.width  : window.innerWidth)  || screen.width;
     const h = (_isNativeStore ? screen.height : window.innerHeight) || screen.height;
     if (h > w) return 'portrait';
@@ -32,7 +32,7 @@ window.GAME_MODE = (() => {
 // ambos leen el valor transitorio incorrecto a la vez, la "corrección" no
 // corrige nada y el flash de escala exagerada persiste hasta que el valor se
 // asiente solo.
-const _isNativeStoreGlobal = (window.GAME_MARKET === ['google', 'play'].join('') || window.GAME_MARKET === 'appstore' || !!window.Capacitor?.isNativePlatform?.());
+const _isNativeStoreGlobal = !!window.Capacitor?.isNativePlatform?.();
 window._safeInnerW = function () { return _isNativeStoreGlobal ? screen.width  : window.innerWidth; };
 window._safeInnerH = function () { return _isNativeStoreGlobal ? screen.height : window.innerHeight; };
 

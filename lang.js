@@ -221,6 +221,8 @@ const I18N = {
         chickenGoldDesc: "10 Pembe Tavuğu 1 Altın Tavuk'a dönüştür. Altın yumurtalar x500 değerinde! (Sadece Sonsuz Çiftlik)",
         chickenGreenDesc: "5 Altın Tavuğu 1 Yeşil Tavuk'a dönüştür. Yeşil yumurtalar x2500 değerinde! (Sadece Sonsuz Çiftlik)",
         chickenPurpleDesc: "10 Yeşil Tavuğu 1 Mor Tavuk'a dönüştür. Mor yumurtalar x25000 değerinde! (Sadece Sonsuz Çiftlik)",
+        rotateDevice: "CİHAZI DÖNDÜRÜN",
+        rotateDeviceDesc: "Bu oyun yatay modda<br>çalışmaktadır",
     },
     ru: {
         loading: "ЗАГРУЗКА...",
@@ -3091,6 +3093,8 @@ const I18N = {
         chickenGoldDesc: "Fusiona 10 Gallinas Rosas en 1 Gallina Dorada. ¡Los huevos dorados valen x500! (Solo Endless)",
         chickenGreenDesc: "Fusiona 5 Gallinas Doradas en 1 Gallina Verde. ¡Los huevos verdes valen x2500! (Solo Endless)",
         chickenPurpleDesc: "Fusiona 10 Gallinas Verdes en 1 Gallina Morada. ¡Los huevos morados valen x25000! (Solo Endless)",
+        rotateDevice: "ROTA EL DISPOSITIVO",
+        rotateDeviceDesc: "Este juego funciona<br>en modo horizontal",
     },
     en: {
         loading: "LOADING...",
@@ -3315,6 +3319,8 @@ const I18N = {
         chickenGoldDesc: "Merge 10 Rose Chickens into 1 Gold Chicken. Gold eggs are worth x500! (Endless only)",
         chickenGreenDesc: "Merge 5 Gold Chickens into 1 Green Chicken. Green eggs are worth x2500! (Endless only)",
         chickenPurpleDesc: "Merge 10 Green Chickens into 1 Purple Chicken. Purple eggs are worth x25000! (Endless only)",
+        rotateDevice: "ROTATE DEVICE",
+        rotateDeviceDesc: "This game works in<br>landscape mode",
     },
     id: {
         loading: "MEMUAT...",
