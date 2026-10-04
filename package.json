@@ -6,7 +6,9 @@
   "scripts": {
     "build": "node scripts/build-web.js",
     "patch": "node scripts/patch-store.js",
-    "cap:sync": "npm run build && npx cap sync && npm run patch",
+    "patch:admob": "node scripts/patch-admob.js",
+    "postinstall": "node scripts/patch-admob.js",
+    "cap:sync": "npm run build && npx cap sync && npm run patch && npm run patch:admob",
     "cap:android": "npm run build && npx cap sync android && npm run patch && npx cap open android",
     "cap:ios": "npm run build && npx cap sync ios && npm run patch && npx cap open ios",
     "start": "node server.js"
