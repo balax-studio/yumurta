@@ -13504,9 +13504,8 @@
         }
 
         function checkPortrait() {
-            // En modo portrait (googleplay/móvil), la orientación ES siempre vertical.
-            // No mostramos el overlay de "rota el dispositivo".
-            if (window.GAME_MODE === 'portrait') {
+            // Mobil ve dikey modda bu oyun daima dikey oynanır, döndürme uyarısı gösterilmez.
+            if (window.GAME_MODE === 'portrait' || window.GAME_MARKET === 'googleplay' || window.GAME_MARKET === 'appstore') {
                 window.isOrientationPaused = false;
                 overlay.style.display = 'none';
                 return;
