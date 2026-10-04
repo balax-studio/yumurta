@@ -1442,10 +1442,11 @@ body.mode-portrait #buy-sortbonus     { --si: -404px  -32px; }
 body.mode-portrait #buy-box           { --si: -484px  -65px; }
 body.mode-portrait #buy-chickenpurple { --si: -404px  -98px; }
 
-/* ── #random-offer-popup banner horizontal en la parte superior del canvas ── */
+/* ── #random-offer-popup banner horizontal encima de Köy Pazarı ── */
 body.mode-portrait #random-offer-popup {
     position: absolute;
-    top: 0;
+    top: auto;
+    bottom: 0;
     left: 0;
     width: 100%;
     box-sizing: border-box;
@@ -1461,6 +1462,7 @@ body.mode-portrait #random-offer-popup #offer-accept-btn {
     padding: 6px 10px;
     box-sizing: border-box;
     cursor: var(--cur-hand);
+    box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.35);
 }
 
 /* ── #eb-offer como banner horizontal en la parte superior del canvas ── */

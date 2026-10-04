@@ -158,7 +158,7 @@ window.FarmOffers = (() => {
         const _isPortrait = window.GAME_MODE === 'portrait';
         if (popup && _isPortrait) {
             const farmArea = document.getElementById('farm-area');
-            if (farmArea) farmArea.insertBefore(popup, farmArea.firstChild);
+            if (farmArea) farmArea.appendChild(popup);
         }
 
         const offerAcceptBtn = document.getElementById('offer-accept-btn');
