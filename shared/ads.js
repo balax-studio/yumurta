@@ -58,8 +58,14 @@ window.GameAds = (() => {
             }
             if (_loaderTimeout) clearTimeout(_loaderTimeout);
             _loaderTimeout = setTimeout(() => {
+                console.warn('[Ads] Ad loader timed out — recovering state');
+                _admPendingReward = null;
+                _admRewardedLoading = false;
                 _hideAdLoader();
-            }, 10000);
+                if (window.isAdPaused) {
+                    _adBreakEnd();
+                }
+            }, 12000);
         } catch (e) {}
     }
 
