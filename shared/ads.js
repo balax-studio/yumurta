@@ -42,6 +42,38 @@ window.GameAds = (() => {
     let _admRewardedLoading = false;
     let _admPendingReward = null;
 
+    // ── Ad Loading Feedback Overlay ─────────────────────────────────────────
+    let _loaderTimeout = null;
+
+    function _showAdLoader() {
+        try {
+            const overlay = document.getElementById('ad-loading-overlay');
+            if (overlay) {
+                const title = document.getElementById('ad-loading-title');
+                const sub = document.getElementById('ad-loading-sub');
+                const isTr = (window.currentLang === 'tr');
+                if (title) title.textContent = isTr ? 'REKLAM HAZIRLANIYOR...' : 'PREPARING AD...';
+                if (sub) sub.textContent = isTr ? 'LÜTFEN BEKLEYİN' : 'PLEASE WAIT';
+                overlay.style.display = 'flex';
+            }
+            if (_loaderTimeout) clearTimeout(_loaderTimeout);
+            _loaderTimeout = setTimeout(() => {
+                _hideAdLoader();
+            }, 10000);
+        } catch (e) {}
+    }
+
+    function _hideAdLoader() {
+        try {
+            if (_loaderTimeout) {
+                clearTimeout(_loaderTimeout);
+                _loaderTimeout = null;
+            }
+            const overlay = document.getElementById('ad-loading-overlay');
+            if (overlay) overlay.style.display = 'none';
+        } catch (e) {}
+    }
+
     // window.Capacitor only exists inside the packaged native app
     function _adm() {
         try {
@@ -72,11 +104,13 @@ window.GameAds = (() => {
             console.warn('[Ads] AdMob rewarded failed to show:', e);
             _admRewardedLoaded = false;
             _admPendingReward = null;
+            _hideAdLoader();
             _adBreakEnd();
             _admPreloadRewarded();
         });
         adm.addListener('onRewardedVideoAdReward', (reward) => {
             console.log('[Ads] AdMob rewarded → reward granted', reward);
+            _hideAdLoader();
             const cb = _admPendingReward;
             _admPendingReward = null;
             cb?.();
@@ -84,6 +118,7 @@ window.GameAds = (() => {
         adm.addListener('onRewardedVideoAdDismissed', () => {
             _admRewardedLoaded = false;
             _admPendingReward = null;
+            _hideAdLoader();
             _adBreakEnd();
             _admPreloadRewarded();
         });
@@ -187,6 +222,7 @@ window.GameAds = (() => {
 
     // Resumes the game loop and audio after any ad.
     function _adBreakEnd() {
+        _hideAdLoader();
         window.isAdPaused = false;
         _onAdEnd?.();
         gameplayStart();
@@ -225,6 +261,7 @@ window.GameAds = (() => {
     // So we check _cgAd() synchronously first — if SDK is ready, call directly.
     function request(onReward) {
         if (window.isAdPaused) return;
+        _showAdLoader();
         _logAdState('request (rewarded)');
         const adModule = _cgAd();
         if (adModule) {
@@ -232,9 +269,9 @@ window.GameAds = (() => {
             console.log('[Ads] request → requesting rewarded ad (sync, gesture preserved)');
             _adBreakStart();
             adModule.requestAd('rewarded', {
-                adStarted:  () => { console.log('[Ads] rewarded adStarted'); },
-                adFinished: () => { console.log('[Ads] rewarded adFinished → reward granted'); _adBreakEnd(); onReward(); },
-                adError:    (e) => { console.warn('[Ads] rewarded adError:', e); _adBreakEnd(); },
+                adStarted:  () => { console.log('[Ads] rewarded adStarted'); _hideAdLoader(); },
+                adFinished: () => { console.log('[Ads] rewarded adFinished → reward granted'); _hideAdLoader(); _adBreakEnd(); onReward(); },
+                adError:    (e) => { console.warn('[Ads] rewarded adError:', e); _hideAdLoader(); _adBreakEnd(); },
             });
             return;
         }
@@ -249,11 +286,14 @@ window.GameAds = (() => {
                 // Ya estaba precargado — se muestra al instante, sin pausa de carga.
                 console.log('[Ads] request → AdMob rewarded preloaded, showing now');
                 _adBreakStart();
-                adm.showRewardVideoAd().catch((e) => {
-                    console.warn('[Ads] AdMob rewarded error:', e);
-                    _admPendingReward = null;
-                    _adBreakEnd();
-                });
+                adm.showRewardVideoAd()
+                    .then(() => _hideAdLoader())
+                    .catch((e) => {
+                        console.warn('[Ads] AdMob rewarded error:', e);
+                        _admPendingReward = null;
+                        _hideAdLoader();
+                        _adBreakEnd();
+                    });
             } else {
                 // Fallback poco común (aún no había terminado de precargar): se pide y
                 // se muestra en cuanto llegue, como antes.
@@ -261,9 +301,11 @@ window.GameAds = (() => {
                 _adBreakStart();
                 adm.prepareRewardVideoAd({ adId: _getRewardedAdId(), isTesting: _ADMOB_TEST_MODE })
                     .then(() => adm.showRewardVideoAd())
+                    .then(() => _hideAdLoader())
                     .catch((e) => {
                         console.warn('[Ads] AdMob rewarded error:', e);
                         _admPendingReward = null;
+                        _hideAdLoader();
                         _adBreakEnd();
                     });
             }
@@ -273,6 +315,7 @@ window.GameAds = (() => {
         // SDK not yet ready — fall back to stub (reward immediately).
         // Deferring via .then() here would lose the user gesture anyway.
         console.log('[Ads] request → SDK not ready, rewarding immediately (stub)');
+        _hideAdLoader();
         onReward();
     }
 

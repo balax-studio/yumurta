@@ -3135,3 +3135,61 @@ body.mode-desktop #eb-offer #eb-accept::before {
     display: block;
     flex-shrink: 0;
 }
+
+/* ── Ad Loading Overlay ── */
+#ad-loading-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.75);
+    z-index: 200000;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    touch-action: none;
+    pointer-events: auto;
+}
+
+#ad-loading-overlay .ad-loading-box {
+    background: #2c1810;
+    border: 4px solid #f1c40f;
+    border-radius: 8px;
+    padding: 22px 28px;
+    text-align: center;
+    max-width: 85vw;
+    box-shadow: 0 8px 0 #120a06, 0 12px 30px rgba(0, 0, 0, 0.85);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+#ad-loading-overlay .ad-loading-icon {
+    font-size: 28px;
+    line-height: 1;
+    animation: ad-loading-bounce 0.7s infinite alternate ease-in-out;
+}
+
+#ad-loading-overlay #ad-loading-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    color: #fff;
+    text-shadow: 2px 2px 0 #000;
+    line-height: 1.6;
+}
+
+#ad-loading-overlay #ad-loading-sub {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: #f1c40f;
+    text-shadow: 1px 1px 0 #000;
+    line-height: 1.4;
+}
+
+@keyframes ad-loading-bounce {
+    0% { transform: translateY(0) scale(1); }
+    100% { transform: translateY(-6px) scale(1.1); }
+}
