@@ -26,8 +26,8 @@ window.GameAds = (() => {
     const _ADMOB_TEST_REWARDED_ID_IOS     = 'ca-app-pub-3940256099942544/1712485313';
     const _ADMOB_TEST_REWARDED_ID_ANDROID = 'ca-app-pub-3940256099942544/5224354917';
 
-    // ponytail: test mode enabled for TestFlight verification; switch to false for live store release
-    const _ADMOB_TEST_MODE = true;
+    // ponytail: test mode switched to false for production store release
+    const _ADMOB_TEST_MODE = false;
 
     function _getRewardedAdId() {
         const isIos = (window.Capacitor?.getPlatform?.() === 'ios');
