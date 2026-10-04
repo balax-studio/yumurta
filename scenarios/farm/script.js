@@ -2272,12 +2272,7 @@
         if (window.isAdPaused) return;
         const _tUpdTop0 = performance.now();
 
-        // Midgame ad — arms when playtime threshold is reached, fires on next pause
-        state.nextAdTime = state.nextAdTime || 480;
-        if (!_midgameAdReady && state.playTime >= state.nextAdTime) {
-            state.nextAdTime += 480;
-            _midgameAdReady = true;
-        }
+        // ponytail: midgame playtime ad removed
 
         // GC safety caps to prevent localStorage quota exceeded errors and mitigate FPS drops
         // egg cap removed for stress testing
@@ -11409,21 +11404,9 @@
     window.isAdPaused = false;
     window.adMobInitialized = false;
 
-    function triggerMidgameAd() {
-        // window.DEBUG=true (a mano en consola) fuerza los anuncios aunque
-        // adsRemoved esté activo — para poder probar que se muestran de
-        // verdad sin depender de qué cuenta de Google tenga cada dispositivo
-        // (la recompensa de pre-registro concede "sin anuncios" en cuanto
-        // Play Billing reconoce la cuenta como pre-registrada).
-        if (state.adsRemoved && !window.DEBUG) return;
-        window.GameAds.requestMidgame();
-    }
-
-    function _tryMidgameAd() {
-        if (!_midgameAdReady) return;
-        _midgameAdReady = false;
-        triggerMidgameAd();
-    }
+    // ponytail: midgame ads removed; only rewarded ads active
+    function triggerMidgameAd() {}
+    function _tryMidgameAd() {}
 
     // loop managed by window.GameEngine
 
@@ -11609,7 +11592,6 @@
             _renderPauseAchievements();
             if (!window.isMusicMuted && !bgmTheme.paused) bgmTheme.pause();
             if (_cgGameplayStarted) window.GameAds.gameplayStop();
-            _tryMidgameAd();
         },
         onResume: () => {
             if (!window.isMusicMuted && !window.isBgmMuted && state.musicLevel > 0 && !window.isOrientationPaused)
@@ -11633,24 +11615,8 @@
         onAdStart: () => { if (!bgmTheme.paused) bgmTheme.pause(); },
         onAdEnd: () => { updateBGM(); },
     });
-    // El banner solo debe verse DENTRO de una partida, nunca en el menú
-    // principal — antes se pedía una vez al arrancar, sin importar dónde
-    // estuviera el jugador. body.in-game se activa/desactiva en varios puntos
-    // (index.html al entrar/salir de una partida, script.js al retirarse...);
-    // en vez de enganchar cada uno, se observa la clase directamente.
-    const _bannerContainerId = window.GAME_MODE === 'portrait' ? 'game-banner'
-        : (window.GAME_MODE === 'desktop' ? 'desktop-banner' : null);
-    if (_bannerContainerId) {
-        let _bannerShown = false;
-        const _syncBannerToGameState = () => {
-            const inGame = document.body.classList.contains('in-game') && (!state.adsRemoved || window.DEBUG);
-            if (inGame && !_bannerShown) { _bannerShown = true; window.GameAds.showBanner(_bannerContainerId); }
-            else if (!inGame && _bannerShown) { _bannerShown = false; window.GameAds.hideBanner(_bannerContainerId); }
-        };
-        new MutationObserver(_syncBannerToGameState).observe(document.body, { attributes: true, attributeFilter: ['class'] });
-        _syncBannerToGameState(); // estado inicial (por si ya arranca in-game, p.ej. window.DEBUG)
-        window._syncAdBannerToGameState = _syncBannerToGameState;
-    }
+    // ponytail: banner ads removed
+    window._syncAdBannerToGameState = () => {};
 
     // ── "Remove Ads" IAP (Google Play, portrait only) ───────────────────────
     // GameIAP.init() no hace nada si no es build googleplay + modo portrait
@@ -12336,13 +12302,7 @@
         window.GameEngine.resetTime();
         window.isWiping = false;
         window._suppressNameBubbles = true;
-        // Pedido explícito (feedback de CrazyGames): "you can call a midgame ad
-        // when we choose to play a mode" — el cambio de reto es un punto de
-        // corte natural (como una pausa), así que es una oportunidad de anuncio
-        // más además de la periódica por tiempo de juego. Reutiliza
-        // triggerMidgameAd() (ya respeta adsRemoved/DEBUG) en vez de llamar al
-        // SDK directamente — mismo camino que usa el resto del juego.
-        triggerMidgameAd();
+        // ponytail: midgame ad on mode switch removed
         console.log('[SWITCH] ✓ complete — _pixi:', !!_pixi, '_pixiCont:', !!_pixiCont, '_pixiTex:', !!_pixiTex, 'chickens:', chickensArr.length);
         } catch (e) {
             console.error('[SWITCH] error during switch:', e);
