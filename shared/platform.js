@@ -1,5 +1,5 @@
 // shared/platform.js — Platform/distribution configuration
-window.GAME_MARKET = window.GAME_MARKET || "googleplay";
+window.GAME_MARKET = window.GAME_MARKET || "mobile";
 
 window.PLATFORM = (() => {
     const market = window.GAME_MARKET;
@@ -36,7 +36,7 @@ window.PLATFORM = (() => {
 
     // ── Community dropdown options for speedrun submission ───────────────────
     const communityOptions = [
-        { value: 'googleplay', label: 'Yumurta Fabrikası' }
+        { value: 'mobile', label: 'Yumurta Fabrikası' }
     ];
 
     // ── SDK hooks (override per platform in dist builds) ─────────────────────
