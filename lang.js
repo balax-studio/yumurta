@@ -3541,7 +3541,7 @@ const I18N = {
 };
 
 let savedLang = localStorage.getItem('chickenIdleLang');
-let currentLang = savedLang ? savedLang : (navigator.language.startsWith('es') ? 'es' : (navigator.language.startsWith('ru') ? 'ru' : (navigator.language.startsWith('tr') ? 'tr' : (navigator.language.startsWith('de') ? 'de' : (navigator.language.startsWith('fr') ? 'fr' : (navigator.language.startsWith('it') ? 'it' : (navigator.language.startsWith('pt') ? 'pt-br' : (navigator.language.startsWith('pl') ? 'pl' : (navigator.language.startsWith('sv') ? 'sv' : (navigator.language.startsWith('nl') ? 'nl' : (navigator.language.startsWith('vi') ? 'vi' : (navigator.language.startsWith('zh') ? 'zh-cn' : (navigator.language.startsWith('ko') ? 'ko' : (navigator.language.startsWith('ja') ? 'ja' : (navigator.language.startsWith('id') ? 'id' : 'en')))))))))))))));
+let currentLang = savedLang ? savedLang : 'tr';
 
 window.changeLanguage = function (langStr, playSnd = false) {
     if (playSnd && !window.isMusicMuted) {
@@ -3908,7 +3908,7 @@ document.body.style.fontFamily = targetFontInit;
 document.addEventListener('DOMContentLoaded', () => { window.changeLanguage(currentLang); });
 
 window.t = function (key) {
-    const val = (I18N[currentLang] && I18N[currentLang][key]) ? I18N[currentLang][key] : (I18N['en'][key] || key);
+    const val = (I18N[currentLang] && I18N[currentLang][key]) ? I18N[currentLang][key] : (I18N['tr'][key] || I18N['en'][key] || key);
     if (Array.isArray(val)) return val[Math.floor(Math.random() * val.length)];
     return val;
 }

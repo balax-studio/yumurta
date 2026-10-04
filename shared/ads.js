@@ -110,7 +110,7 @@ window.GameAds = (() => {
             _sdkReady = window.CrazyGames.SDK.init().catch(() => {});
             console.log('[Ads] init — called SDK.init() (fallback)');
         } else {
-            console.warn('[Ads] init — no CrazyGames SDK found, ads will be stubs');
+            // Local or mobile AdMob mode
         }
 
         // Apply muteAudio once SDK is ready, then listen for changes.

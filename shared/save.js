@@ -227,22 +227,13 @@ window.GameSave = (() => {
     // ── Init and load ─────────────────────────────────────────────────────────
     // Not on CrazyGames → onReady() immediately (pure localStorage guest).
     // Guest on CrazyGames → wait for SDK init, then onReady() (no cloud load).
-    // Account on CrazyGames → wait for SDK, load cloud into _memStore, onReady().
     async function initAndLoad(keys, onReady) {
         _migrateLegacyUnsuffixedKeys(keys);
-        console.log('[Save] initAndLoad start — CrazyGames present:', !!window.CrazyGames, '| _isLoggedIn:', _isLoggedIn);
         if (!window.CrazyGames) {
-            // Sin el SDK de CrazyGames no hay forma de confirmar (ni de usar) un login
-            // en la nube — si _isLoggedIn quedó a true por un flag viejo en localStorage
-            // (p.ej. de una prueba anterior en este mismo origin), save()/load() seguirían
-            // intentando la ruta de nube para siempre y CADA guardado se perdería en
-            // silencio (_cgData() siempre null aquí). Se corrige antes de seguir.
             if (_isLoggedIn) {
-                console.warn('[Save] initAndLoad — _isLoggedIn era true sin CrazyGames presente, se corrige a guest');
                 _isLoggedIn = false;
                 localStorage.removeItem(AUTH_FLAG);
             }
-            console.log('[Save] initAndLoad — not CrazyGames, calling onReady() immediately');
             onReady();
             return;
         }

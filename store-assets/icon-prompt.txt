@@ -1,0 +1,4 @@
+Tool: built-in image_gen
+Use case: logo-brand
+Google Play icon for Yumurta Fabrikası. Reference: tr-TR/03-yumurta-fabrikasi.png (style only).
+One large white pixel-art hen facing right, red comb, yellow beak, black square eye. One golden egg in lower-right foreground, small blue conveyor underneath. Green pasture and warm wooden factory accent. Crisp chunky 16-bit pixel art matching the game. Clear silhouette at 48px. Opaque full-bleed square; no outer rounding, shadow, frame, text, badges, rankings, prices or watermark. Keep face and egg inside central 75% for masking. Generate square artwork, export final as 512x512 sRGB RGBA PNG below 1 MB.

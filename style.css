@@ -1903,7 +1903,7 @@ body.mode-desktop #desktop-banner {
    encogido en una tira de 50px. Se usa :not(market-crazygames) en vez de
    listar cada market (galaxy, itchio, newgrounds...) para que cualquier build
    no-CrazyGames futuro caiga aquí automáticamente. */
-body.mode-desktop:not(.market-crazygames) #desktop-banner::before {
+body.mode-desktop #desktop-banner::before {
     content: "YUMURTA FABRİKASI: ÇİFTLİK TYCOON";
     font-family: 'Press Start 2P', cursive;
     font-size: 16px;

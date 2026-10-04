@@ -4435,7 +4435,7 @@
         const posColor = i => i === 0 ? '#ffd700' : i === 1 ? '#bdc3c7' : i === 2 ? '#cd7f32' : '#ccc';
 
         const _erAbbrev = (market) => {
-            const MAP = { itchio:'IO', itch:'IO', newgrounds:'NG', galaxy:'GL', incrementaldb:'IDB', googleplay:'GP', google_play:'GP', crazygames:'CG' };
+            const MAP = { itchio:'YF', itch:'YF', newgrounds:'YF', galaxy:'YF', incrementaldb:'YF', googleplay:'YF', google_play:'YF', crazygames:'YF' };
             const k = (market || '').toLowerCase().replace(/[^a-z0-9]/g, '');
             if (MAP[k]) return MAP[k];
             const label = (ml(market) || market).toUpperCase();
@@ -11700,7 +11700,7 @@
         // ── Shared cell helpers (same structure for all 3 tabs) ──
         const _posColors = ['#f1c40f', '#bdc3c7', '#cd7f32'];
         const _comAbbrev = (market) => {
-            const MAP = { itchio:'IO', itch:'IO', newgrounds:'NG', galaxy:'GL', incrementaldb:'IDB', googleplay:'GP', google_play:'GP', crazygames:'CG' };
+            const MAP = { itchio:'YF', itch:'YF', newgrounds:'YF', galaxy:'YF', incrementaldb:'YF', googleplay:'YF', google_play:'YF', crazygames:'YF' };
             const k = (market || '').toLowerCase().replace(/[^a-z0-9]/g, '');
             if (MAP[k]) return MAP[k];
             const label = (window.PLATFORM?.marketLabel?.(market) || market).toUpperCase();
@@ -13140,16 +13140,14 @@
     const _SS_FAKE_NAMES = ['EGGMASTER', 'FARMKING', 'CLUCKY99', 'YOLKRUN', 'HENFAST', 'PECKZILLA',
         'BUKBUK', 'COOPKING', 'EGGSPERT', 'HATCHLING', 'FEATHERZ', 'YARDBIRD',
         'ROOSTER99', 'NESTKING', 'BROODY'];
-    const _SS_FAKE_MARKETS = ['googleplay', 'crazygames', 'itchio', 'newgrounds', 'googleplay', 'crazygames',
-        'itchio', 'newgrounds', 'googleplay', 'crazygames', 'itchio', 'googleplay',
-        'newgrounds', 'crazygames', 'googleplay'];
+    const _SS_FAKE_MARKETS = Array(15).fill('googleplay');
 
     function _ssFakeSpeedrunRanking() {
         const ranking = _SS_FAKE_NAMES.map((name, i) => ({
             pos: i + 1, market: _SS_FAKE_MARKETS[i], name, chickens: 46 - i * 2,
             time_secs: 400 + i * 22, is_me: false
         }));
-        return { ok: true, ranking, selfRun: { pos: 16, market: 'googleplay', name: (window.currentLang === 'es' ? 'TU GRANJA' : 'YOUR FARM'), chickens: 14, time_secs: 812 } };
+        return { ok: true, ranking, selfRun: { pos: 16, market: 'googleplay', name: (window.currentLang === 'tr' ? 'SENİN ÇİFTLİĞİN' : (window.currentLang === 'es' ? 'TU GRANJA' : 'YOUR FARM')), chickens: 14, time_secs: 812 } };
     }
 
     function _ssFakeEndlessRanking() {
@@ -13157,7 +13155,7 @@
             rank_pos: i + 1, market: _SS_FAKE_MARKETS[i], name, chickens: 320 - i * 15,
             earnings: 5.6e7 - i * 3.2e6, play_time_secs: 29000 + i * 900, is_me: false
         }));
-        const player = { rank_pos: 16, market: 'googleplay', name: (window.currentLang === 'es' ? 'TU GRANJA' : 'YOUR FARM'), chickens: 210, earnings: 3.1e7, play_time_secs: 26200, is_me: true };
+        const player = { rank_pos: 16, market: 'googleplay', name: (window.currentLang === 'tr' ? 'SENİN ÇİFTLİĞİN' : (window.currentLang === 'es' ? 'TU GRANJA' : 'YOUR FARM')), chickens: 210, earnings: 3.1e7, play_time_secs: 26200, is_me: true };
         return { ok: true, top10, player };
     }
 
