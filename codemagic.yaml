@@ -19,7 +19,6 @@ workflows:
       - name: Install dependencies
         script: |
           npm install
-          node scripts/patch-admob.js
       - name: Build web assets and sync Capacitor
         script: |
           npm run cap:sync
@@ -56,7 +55,6 @@ workflows:
       - name: Install dependencies
         script: |
           npm install
-          node scripts/patch-admob.js
       - name: Build web assets and sync Capacitor
         script: |
           npm run cap:sync
