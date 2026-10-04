@@ -1442,6 +1442,27 @@ body.mode-portrait #buy-sortbonus     { --si: -404px  -32px; }
 body.mode-portrait #buy-box           { --si: -484px  -65px; }
 body.mode-portrait #buy-chickenpurple { --si: -404px  -98px; }
 
+/* ── #random-offer-popup banner horizontal en la parte superior del canvas ── */
+body.mode-portrait #random-offer-popup {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    box-sizing: border-box;
+    z-index: 60;
+    margin: 0;
+    padding: 4px 8px;
+    pointer-events: auto;
+}
+
+body.mode-portrait #random-offer-popup #offer-accept-btn {
+    width: 100%;
+    margin: 0;
+    padding: 6px 10px;
+    box-sizing: border-box;
+    cursor: var(--cur-hand);
+}
+
 /* ── #eb-offer como banner horizontal en la parte superior del canvas ── */
 body.mode-portrait #eb-offer {
     position: absolute;

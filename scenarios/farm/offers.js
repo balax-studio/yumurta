@@ -154,6 +154,13 @@ window.FarmOffers = (() => {
     }
 
     function setup() {
+        const popup = document.getElementById('random-offer-popup');
+        const _isPortrait = window.GAME_MODE === 'portrait';
+        if (popup && _isPortrait) {
+            const farmArea = document.getElementById('farm-area');
+            if (farmArea) farmArea.insertBefore(popup, farmArea.firstChild);
+        }
+
         const offerAcceptBtn = document.getElementById('offer-accept-btn');
         if (offerAcceptBtn) {
             offerAcceptBtn.addEventListener('click', () => {

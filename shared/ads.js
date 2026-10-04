@@ -22,12 +22,20 @@ window.GameAds = (() => {
     const _ADMOB_REWARDED_ID_ANDROID = 'ca-app-pub-2626843024156194/9307387605';
     const _ADMOB_REWARDED_ID_IOS     = 'ca-app-pub-2626843024156194/9778246614';
 
+    // Official Google AdMob test rewarded ad units for TestFlight & development
+    const _ADMOB_TEST_REWARDED_ID_IOS     = 'ca-app-pub-3940256099942544/1712485313';
+    const _ADMOB_TEST_REWARDED_ID_ANDROID = 'ca-app-pub-3940256099942544/5224354917';
+
+    // ponytail: test mode enabled for TestFlight verification; switch to false for live store release
+    const _ADMOB_TEST_MODE = true;
+
     function _getRewardedAdId() {
-        return (window.Capacitor?.getPlatform?.() === 'ios')
-            ? _ADMOB_REWARDED_ID_IOS
-            : _ADMOB_REWARDED_ID_ANDROID;
+        const isIos = (window.Capacitor?.getPlatform?.() === 'ios');
+        if (_ADMOB_TEST_MODE) {
+            return isIos ? _ADMOB_TEST_REWARDED_ID_IOS : _ADMOB_TEST_REWARDED_ANDROID;
+        }
+        return isIos ? _ADMOB_REWARDED_ID_IOS : _ADMOB_REWARDED_ID_ANDROID;
     }
-    const _ADMOB_TEST_MODE = false;
 
     let _admListenersReady = false;
     let _admRewardedLoaded = false;
