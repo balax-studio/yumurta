@@ -135,9 +135,16 @@ window.GameAds = (() => {
             };
 
             // AppTrackingTransparency (ATT) for iOS compliance (§5.1.2)
+            const isIos = window.Capacitor?.getPlatform?.() === 'ios';
             const att = window.Capacitor?.Plugins?.AppTrackingTransparency;
-            if (att?.requestTrackingAuthorization) {
-                att.requestTrackingAuthorization().then(_startAdm).catch(_startAdm);
+            const requestTracking = att?.requestTrackingAuthorization
+                ? () => att.requestTrackingAuthorization()
+                : (isIos && typeof adm?.requestTrackingAuthorization === 'function')
+                    ? () => adm.requestTrackingAuthorization()
+                    : null;
+
+            if (requestTracking) {
+                requestTracking().then(_startAdm).catch(_startAdm);
             } else {
                 _startAdm();
             }
